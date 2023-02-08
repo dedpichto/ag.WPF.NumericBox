@@ -350,6 +350,7 @@ MigrationBackup/
 .ionide/
 
 # test projects
+Test*/
 /[Tt]est*/*.*
 [Tt]est*/*.*
 /TestFramework/TestFramework.csproj
