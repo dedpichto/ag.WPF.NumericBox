@@ -348,3 +348,24 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+
+# test projects
+/[Tt]est*/*.*
+[Tt]est*/*.*
+/TestFramework/TestFramework.csproj
+/TestFramework/Properties/Resources.resx
+/TestFramework/Properties/Resources.Designer.cs
+/TestFramework/Properties/AssemblyInfo.cs
+/TestFramework/Properties/Settings.settings
+/TestFramework/Properties/Settings.Designer.cs
+/TestFramework/App.config
+/TestFramework/App.xaml
+/TestFramework/App.xaml.cs
+/TestFramework/MainWindow.xaml
+/TestFramework/MainWindow.xaml.cs
+/TestNet/TestNet.csproj
+/TestNet/App.xaml
+/TestNet/App.xaml.cs
+/TestNet/AssemblyInfo.cs
+/TestNet/MainWindow.xaml
+/TestNet/MainWindow.xaml.cs
