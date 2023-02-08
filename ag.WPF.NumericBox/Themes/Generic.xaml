@@ -29,7 +29,8 @@
                              Focusable="True"
                              Background="{StaticResource UpDownBackgroundBrush}" 
                              BorderBrush="{StaticResource UpDownBorderBrush}"
-                             BorderThickness="{TemplateBinding BorderThickness}">
+                             BorderThickness="{TemplateBinding BorderThickness}"
+                             TextAlignment="{TemplateBinding TextAlignment}">
                         <TextBox.Foreground>
                             <MultiBinding Converter="{StaticResource NumericBoxForegroundConverter}">
                                 <MultiBinding.Bindings>

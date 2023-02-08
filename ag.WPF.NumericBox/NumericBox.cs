@@ -49,9 +49,23 @@ namespace ag.WPF.NumericBox
         /// </summary>
         public static readonly DependencyProperty NegativeForegroundProperty = DependencyProperty.Register(nameof(NegativeForeground), typeof(SolidColorBrush), typeof(NumericBox),
                 new FrameworkPropertyMetadata(Brushes.Red, OnNegativeForegroundChanged));
+        /// <summary>
+        /// The identifier of the <see cref="TextAlignment"/> dependency property.
+        /// </summary>
+        public static readonly DependencyProperty TextAlignmentProperty = DependencyProperty.Register(nameof(TextAlignment), typeof(TextAlignment), typeof(NumericBox),
+                new FrameworkPropertyMetadata(TextAlignment.Left, OnTextAlignmentChanged));
         #endregion
 
         #region Public properties
+        /// <summary>
+        /// Gets or sets the text alignment of NumericBox.
+        /// </summary>
+        public TextAlignment TextAlignment
+        {
+            get =>(TextAlignment)GetValue(TextAlignmentProperty); 
+            set => SetValue(TextAlignmentProperty, value);
+        }
+
         /// <summary>
         /// Gets or sets the value of NumericBox.
         /// </summary>
@@ -90,6 +104,26 @@ namespace ag.WPF.NumericBox
         #endregion
 
         #region Callbacks
+        /// <summary>
+        /// Invoked just before the <see cref="TextAlignmentChanged"/> event is raised on NumericBox
+        /// </summary>
+        /// <param name="oldValue">Old value</param>
+        /// <param name="newValue">New value</param>
+        private void OnTextAlignmentChanged(TextAlignment oldValue, TextAlignment newValue)
+        {
+            var e = new RoutedPropertyChangedEventArgs<TextAlignment>(oldValue, newValue)
+            {
+                RoutedEvent = TextAlignmentChangedEvent
+            };
+            RaiseEvent(e);
+        }
+
+        private static void OnTextAlignmentChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
+        {
+            if (sender is not NumericBox box) return;
+            box.OnTextAlignmentChanged((TextAlignment)(e.OldValue), (TextAlignment)(e.NewValue));
+        }
+
         /// <summary>
         /// Invoked just before the <see cref="ValueChanged"/> event is raised on NumericBox
         /// </summary>
@@ -172,6 +206,20 @@ namespace ag.WPF.NumericBox
         #endregion
 
         #region Routed events
+        /// <summary>
+        /// Occurs when the <see cref="TextAlignment"/> property has been changed in some way.
+        /// </summary>
+        public event RoutedPropertyChangedEventHandler<TextAlignment> TextAlignmentChanged
+        {
+            add => AddHandler(TextAlignmentChangedEvent, value);
+            remove => RemoveHandler(TextAlignmentChangedEvent, value);
+        }
+        /// <summary>
+        /// Identifies the <see cref="TextAlignmentChanged"/> routed event.
+        /// </summary>
+        public static readonly RoutedEvent TextAlignmentChangedEvent = EventManager.RegisterRoutedEvent("TextAlignmentChanged",
+            RoutingStrategy.Bubble, typeof(RoutedPropertyChangedEventHandler<TextAlignment>), typeof(NumericBox));
+
         /// <summary>
         /// Occurs when the <see cref="Value"/> property has been changed in some way.
         /// </summary>
@@ -423,13 +471,13 @@ namespace ag.WPF.NumericBox
             }
             binding.Converter = new NumericBoxTextToValueConverter();
             if (UseGroupSeparator && DecimalPlaces > 0)
-                binding.StringFormat = $"#{CultureInfo.CurrentCulture.NumberFormat.NumberGroupSeparator}###{CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator}{new string('0', (int)DecimalPlaces)}";
+                binding.StringFormat = $"#{CultureInfo.CurrentCulture.NumberFormat.NumberGroupSeparator}##0{CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator}{new string('0', (int)DecimalPlaces)}";
             else if (!UseGroupSeparator && DecimalPlaces > 0)
-                binding.StringFormat = $"#{CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator}{new string('0', (int)DecimalPlaces)}";
+                binding.StringFormat = $"0{CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator}{new string('0', (int)DecimalPlaces)}";
             else if (UseGroupSeparator && DecimalPlaces == 0)
-                binding.StringFormat = $"#{CultureInfo.CurrentCulture.NumberFormat.NumberGroupSeparator}###";
+                binding.StringFormat = $"#{CultureInfo.CurrentCulture.NumberFormat.NumberGroupSeparator}##0";
             else
-                binding.StringFormat = "#";
+                binding.StringFormat = "0";
             _textBox.SetBinding(TextBox.TextProperty, binding);
         }
         #endregion
