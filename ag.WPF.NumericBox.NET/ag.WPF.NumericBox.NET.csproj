@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <Compile Include="..\ag.WPF.NumericBox\NumericBox.cs" Link="NumericBox.cs" />
+    <Compile Include="..\ag.WPF.NumericBox\Statics.cs" Link="Statics.cs" />
   </ItemGroup>
 
   <ItemGroup>

@@ -20,6 +20,21 @@ namespace ag.WPF.NumericBox
     public class NumericBox : Control
 #nullable disable
     {
+        private enum CurrentKey
+        {
+            None,
+            Number,
+            Delete,
+            Back
+        }
+
+        private struct CurrentPosition
+        {
+            public CurrentKey Key;
+            public int Offset;
+            public bool Exclude;
+        }
+
         #region Constants
         private const string ElementText = "PART_Text";
         #endregion
@@ -27,6 +42,8 @@ namespace ag.WPF.NumericBox
         #region Elements
         private TextBox _textBox;
         #endregion
+
+        private CurrentPosition _Position;
 
         #region Dependency properties
         /// <summary>
@@ -62,7 +79,7 @@ namespace ag.WPF.NumericBox
         /// </summary>
         public TextAlignment TextAlignment
         {
-            get =>(TextAlignment)GetValue(TextAlignmentProperty); 
+            get => (TextAlignment)GetValue(TextAlignmentProperty);
             set => SetValue(TextAlignmentProperty, value);
         }
 
@@ -309,7 +326,6 @@ namespace ag.WPF.NumericBox
                 _textBox.PreviewTextInput += TextBox_PreviewTextInput;
                 _textBox.TextChanged += TextBox_TextChanged;
                 _textBox.CommandBindings.Add(new CommandBinding(ApplicationCommands.Paste, pasteCommandBinding));
-                setTextBinding();
             }
         }
         #endregion
@@ -320,69 +336,90 @@ namespace ag.WPF.NumericBox
             if (_textBox.Text == "-")
             {
                 Value = null;
-                setTextBinding();
                 BindingOperations.GetBindingExpression(_textBox, TextBox.TextProperty).UpdateSource();
             }
         }
 
         private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            var bd = BindingOperations.GetBinding(_textBox, TextBox.TextProperty);
-            if (bd != null && bd.Converter == null && _textBox.Text != "-")
+            if (_Position.Exclude)
+                return;
+            if (_Position.Key.In(CurrentKey.Number, CurrentKey.Back))
             {
-                var caretPos = _textBox.CaretIndex;
-                setTextBinding();
-                _textBox.CaretIndex = caretPos;
+                _textBox.CaretIndex = _textBox.Text.Length - _Position.Offset;
             }
         }
 
         private void TextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
-            if (e.Text == CultureInfo.CurrentCulture.NumberFormat.NumberGroupSeparator)
+            try
             {
-                e.Handled = true;
-                return;
-            }
-            else if (e.Text == CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator)
-            {
-                if (DecimalPlaces > 0)
-                {
-                    _textBox.CaretIndex = _textBox.Text.IndexOf(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator) + 1;
-                }
-                e.Handled = true;
-                return;
-            }
-            else if (e.Text == CultureInfo.CurrentCulture.NumberFormat.NegativeSign)
-            {
-                if (_textBox.CaretIndex > 0)
+                if (e.Text == CultureInfo.CurrentCulture.NumberFormat.NumberGroupSeparator)
                 {
                     e.Handled = true;
                     return;
                 }
-                if (_textBox.SelectionLength == _textBox.Text.Length)
-                    Value = null;
-                if (Value == null)
+                else if (e.Text == CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator)
                 {
-                    setTextBinding(true);
+                    if (DecimalPlaces > 0)
+                    {
+                        _textBox.CaretIndex = _textBox.Text.IndexOf(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator) + 1;
+                    }
+                    e.Handled = true;
                     return;
                 }
+                else if (e.Text == CultureInfo.CurrentCulture.NumberFormat.NegativeSign)
+                {
+                    if (_textBox.SelectionLength == _textBox.Text.Length)
+                    {
+                        return;
+                    }
+                    if (_textBox.CaretIndex > 0)
+                    {
+                        e.Handled = true;
+                        return;
+                    }
+                    //if (_textBox.SelectionLength == _textBox.Text.Length)
+                    //    Value = null;
+                    //if (Value == null)
+                    //{
+                    //    setTextBinding(true);
+                    //    return;
+                    //}
+                }
+                else if (!e.Text.In("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"))
+                {
+                    e.Handled = true;
+                    return;
+                }
+
+                if (e.Text.In("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")
+                    && _textBox.Text.Contains(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator)
+                    && _textBox.CaretIndex == _textBox.Text.Length)
+                {
+                    e.Handled = true;
+                    return;
+                }
+                else
+                {
+                    _Position.Key = CurrentKey.Number;
+                }
             }
-            else if (!e.Text.In("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"))
+            finally
             {
-                e.Handled = true;
-                return;
-            }
-            else if (e.Text.In("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")
-                && DecimalPlaces > 0
-                && _textBox.CaretIndex == _textBox.Text.Length)
-            {
-                e.Handled = true;
-                return;
+                if (!e.Handled)
+                {
+                    setPositionOffset();
+                }
             }
         }
 
         private void TextBox_PreviewKeyDown(object sender, KeyEventArgs e)
         {
+            _Position.Key = CurrentKey.None;
+            _Position.Offset = 0;
+            _Position.Exclude = false;
+
             if ((Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift)
             {
                 if (e.Key != Key.Home && e.Key != Key.End)
@@ -410,8 +447,10 @@ namespace ag.WPF.NumericBox
                         e.Handled = true;
                         break;
                     }
-                    if (DecimalPlaces > 0
+                    if ((DecimalPlaces > 0
                         && _textBox.CaretIndex == _textBox.Text.IndexOf(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator,
+                                StringComparison.Ordinal))
+                                || _textBox.CaretIndex == _textBox.Text.IndexOf(CultureInfo.CurrentCulture.NumberFormat.NumberGroupSeparator,
                                 StringComparison.Ordinal))
                     {
                         _textBox.CaretIndex++;
@@ -420,6 +459,7 @@ namespace ag.WPF.NumericBox
                     }
                     break;
                 case Key.Back:
+                    _Position.Key = CurrentKey.Back;
                     if ((_textBox.SelectionLength == _textBox.Text.Length) || (_textBox.CaretIndex == 1 && _textBox.Text.Length == 1))
                     {
                         Value = null;
@@ -435,6 +475,7 @@ namespace ag.WPF.NumericBox
                         e.Handled = true;
                         break;
                     }
+                    setPositionOffset();
                     break;
             }
         }
@@ -443,6 +484,25 @@ namespace ag.WPF.NumericBox
         #endregion
 
         #region Private procedures
+        private void setPositionOffset()
+        {
+            if (_textBox.Text == "-" || _textBox.Text.Length == _textBox.SelectionLength || Value == null)
+            {
+                _Position.Exclude = true;
+            }
+            var sepPos = _textBox.Text.IndexOf(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator);
+
+            _Position.Offset = _textBox.Text.Length == _textBox.SelectionLength
+                ? _textBox.Text.Length - 1
+                : sepPos == -1
+                    ? _textBox.Text.Length - (_textBox.CaretIndex + _textBox.SelectionLength)
+                    : _textBox.CaretIndex <= sepPos
+                        ? _textBox.Text.Length - (_textBox.CaretIndex + _textBox.SelectionLength)
+                        : _Position.Key == CurrentKey.Number
+                            ? _textBox.Text.Length - (_textBox.CaretIndex + _textBox.SelectionLength) - 1
+                            : _textBox.Text.Length - (_textBox.CaretIndex + _textBox.SelectionLength) + 1;
+        }
+
         private void pasteCommandBinding(object sender, ExecutedRoutedEventArgs e)
         {
             if (Clipboard.ContainsText())
@@ -458,28 +518,6 @@ namespace ag.WPF.NumericBox
                 e.Handled = true;
             }
         }
-
-        private void setTextBinding(bool removeConverter = false)
-        {
-            if (_textBox == null) return;
-
-            var binding = new Binding(nameof(Value)) { Mode = BindingMode.TwoWay, UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged, RelativeSource = new RelativeSource { Mode = RelativeSourceMode.TemplatedParent } };
-            if (removeConverter)
-            {
-                _textBox.SetBinding(TextBox.TextProperty, binding);
-                return;
-            }
-            binding.Converter = new NumericBoxTextToValueConverter();
-            if (UseGroupSeparator && DecimalPlaces > 0)
-                binding.StringFormat = $"#{CultureInfo.CurrentCulture.NumberFormat.NumberGroupSeparator}##0{CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator}{new string('0', (int)DecimalPlaces)}";
-            else if (!UseGroupSeparator && DecimalPlaces > 0)
-                binding.StringFormat = $"0{CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator}{new string('0', (int)DecimalPlaces)}";
-            else if (UseGroupSeparator && DecimalPlaces == 0)
-                binding.StringFormat = $"#{CultureInfo.CurrentCulture.NumberFormat.NumberGroupSeparator}##0";
-            else
-                binding.StringFormat = "0";
-            _textBox.SetBinding(TextBox.TextProperty, binding);
-        }
         #endregion
     }
 
@@ -488,41 +526,6 @@ namespace ag.WPF.NumericBox
         internal static bool In<T>(this T obj, params T[] values) => values.Contains(obj);
     }
 
-    /// <summary>
-    /// Converts NumericBox value/text to string/decimal
-    /// </summary>
-    public class NumericBoxTextToValueConverter : IValueConverter
-    {
-        /// <summary>
-        /// Converts NumericBox value to string
-        /// </summary>
-        /// <param name="value"></param>
-        /// <param name="targetType"></param>
-        /// <param name="parameter"></param>
-        /// <param name="culture"></param>
-        /// <returns></returns>
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            if (value == null || value is not decimal decimalValue) return null;
-            return value == null ? "" : decimalValue;
-        }
-        /// <summary>
-        /// Converts NumericBox text to decimal
-        /// </summary>
-        /// <param name="value"></param>
-        /// <param name="targetType"></param>
-        /// <param name="parameter"></param>
-        /// <param name="culture"></param>
-        /// <returns></returns>
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            if (value is not string stringValue) return null;
-            stringValue.Replace(",,", ",");
-            while (stringValue.StartsWith(","))
-                stringValue = stringValue.Substring(1);
-            return string.IsNullOrEmpty(stringValue) ? null : decimal.Parse(stringValue, NumberStyles.Any);
-        }
-    }
 
     /// <summary>
     /// 
@@ -552,6 +555,76 @@ namespace ag.WPF.NumericBox
         /// <param name="culture">Not used.</param>
         /// <returns>Not used.</returns>
         public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture) => throw new NotImplementedException();
+    }
+
+    /// <summary>
+    /// Converts NumericBox value/text to string/decimal
+    /// </summary>
+    public class NumericBoxTextToValueConverter : IMultiValueConverter
+    {
+        /// <summary>
+        /// Converts decimal value to string.
+        /// </summary>
+        /// <param name="values">Array consists of current NumericBox value, decimal places and separator using flag.</param>
+        /// <param name="targetType">Not used.</param>
+        /// <param name="parameter">Not used.</param>
+        /// <param name="culture">Not used.</param>
+        /// <returns>Formatted string.</returns>
+        public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (values[0] is not decimal decimalValue || values[1] is not uint decimalPlaces || values[2] is not bool useSeparator) return "";
+            if (decimalValue == Statics.Epsilon)
+                return "-";
+            var partInt = decimal.Truncate(decimalValue);
+            var partFraction =
+                Math.Abs(decimal.Truncate((decimalValue - partInt) * (int)Math.Pow(10.0, decimalPlaces)));
+            var formatInt = useSeparator ? "#" + culture.NumberFormat.NumberGroupSeparator + "##0" : "##0";
+            var formatFraction = new string('0', (int)decimalPlaces);
+            var stringInt = partInt.ToString(formatInt);
+            if (decimalValue < 0 && partInt == 0)
+                stringInt = $"-{stringInt}";
+            var result = decimalPlaces > 0
+                ? $"{stringInt}{culture.NumberFormat.NumberDecimalSeparator}{partFraction.ToString(formatFraction)}"
+                : stringInt;
+            return result;
+        }
+
+        /// <summary>
+        /// Converts string to decimal.
+        /// </summary>
+        /// <param name="value">String.</param>
+        /// <param name="targetTypes">Not used.</param>
+        /// <param name="parameter">Not used.</param>
+        /// <param name="culture">Not used.</param>
+        /// <returns>Decimal.</returns>
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        {
+            if (value is not string stringValue) return null;
+            if (!string.IsNullOrEmpty(stringValue))
+                stringValue = stringValue.Replace(culture.NumberFormat.NumberGroupSeparator, "");
+            object[] result;
+            if (stringValue != "-")
+            {
+                if (double.TryParse(stringValue, out double doubleValue))
+                {
+                    if (doubleValue <= (double)decimal.MaxValue && doubleValue >= (double)decimal.MinValue)
+                        result = new object[] { decimal.Parse(stringValue, NumberStyles.Any) };
+                    else if (doubleValue > (double)decimal.MaxValue)
+                        result = new object[] { decimal.MaxValue };
+                    else
+                        result = new object[] { decimal.MinValue };
+                }
+                else
+                {
+                    result = null;
+                }
+            }
+            else
+            {
+                result = new object[] { Statics.Epsilon };
+            }
+            return result;
+        }
 #nullable restore
     }
 }

@@ -31,6 +31,15 @@
                              BorderBrush="{StaticResource UpDownBorderBrush}"
                              BorderThickness="{TemplateBinding BorderThickness}"
                              TextAlignment="{TemplateBinding TextAlignment}">
+                        <TextBox.Text>
+                            <MultiBinding Converter="{StaticResource NumericBoxTextToValueConverter}" Mode="TwoWay" UpdateSourceTrigger="PropertyChanged">
+                                <MultiBinding.Bindings>
+                                    <Binding Path="Value" RelativeSource="{RelativeSource Mode=TemplatedParent}"/>
+                                    <Binding Path="DecimalPlaces" RelativeSource="{RelativeSource Mode=TemplatedParent}"/>
+                                    <Binding Path="UseGroupSeparator" RelativeSource="{RelativeSource Mode=TemplatedParent}"/>
+                                </MultiBinding.Bindings>
+                            </MultiBinding>
+                        </TextBox.Text>
                         <TextBox.Foreground>
                             <MultiBinding Converter="{StaticResource NumericBoxForegroundConverter}">
                                 <MultiBinding.Bindings>
