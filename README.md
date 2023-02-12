@@ -2,7 +2,7 @@
 
 Custom WPF control for input and formatted output of decimal values
 
-![ag.WPF.NumericBox](https://github.com/dedpichto/ag.WPF.NumericBox/raw/dev/ag.WPF.NumericBox/img/numericbox.png?raw=true "ag.WPF.NumericBox")
+![ag.WPF.NumericBox](https://public.am.files.1drv.com/y4mJ6cCumuPSuNAW9gT9b_o0LRYR1pEf25LE7-AwC51ypeDcrEMKGrqMSqOcbATqZ8F2Ds8c-lG726BTXoUnPPebcylkDlMVOUNsQbrqEdYYC6Mw7AOhLzWJbtz_jE1Izcat1h229qURso5X8nAf1wQLws2WqTwHWnF7D4llAFhp0Ohdcfio8U0FFzc47vGL0HulYRHB7Y49O-B4gVnNT5YAw/numericbox.png?psid=1&cropMode=center "ag.WPF.NumericBox")
 
 ## Installation
 
