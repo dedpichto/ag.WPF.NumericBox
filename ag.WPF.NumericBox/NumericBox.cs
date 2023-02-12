@@ -50,7 +50,7 @@ namespace ag.WPF.NumericBox
         /// The identifier of the <see cref="Value"/> dependency property.
         /// </summary>
         public static readonly DependencyProperty ValueProperty = DependencyProperty.Register(nameof(Value), typeof(decimal?), typeof(NumericBox),
-                new FrameworkPropertyMetadata(0m, OnValueChanged));
+                new FrameworkPropertyMetadata(null, OnValueChanged));
         /// <summary>
         /// The identifier of the <see cref="DecimalPlaces"/> dependency property.
         /// </summary>
@@ -585,11 +585,18 @@ namespace ag.WPF.NumericBox
             {
                 var text = Clipboard.GetText();
                 if (!decimal.TryParse(text, out _))
+                {
                     e.Handled = true;
-                else if (_textBox.SelectionLength > 0)
-                    _textBox.SelectedText = text;
+                }
                 else
-                    _textBox.Text = _textBox.Text.Insert(_textBox.CaretIndex, text);
+                {
+                    _Position.Key = CurrentKey.Number;
+                    setPositionOffset();
+                    if (_textBox.SelectionLength > 0)
+                        _textBox.SelectedText = text;
+                    else
+                        _textBox.Text = _textBox.Text.Insert(_textBox.CaretIndex, text);
+                }
             }
             else
             {
