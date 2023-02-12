@@ -5,7 +5,7 @@
 
     <local:NumericBoxTextToValueConverter x:Key="NumericBoxTextToValueConverter"/>
     <local:NumericBoxForegroundConverter x:Key="NumericBoxForegroundConverter"/>
-    
+
     <SolidColorBrush x:Key="UpDownBackgroundBrush" Color="{DynamicResource {x:Static SystemColors.WindowColorKey}}"/>
     <LinearGradientBrush x:Key="UpDownBorderBrush" StartPoint="0,0" EndPoint="0,1">
         <LinearGradientBrush.GradientStops>
@@ -15,7 +15,7 @@
             </GradientStopCollection>
         </LinearGradientBrush.GradientStops>
     </LinearGradientBrush>
-    
+
     <Style TargetType="{x:Type local:NumericBox}">
         <Setter Property="Height" Value="21"/>
         <Setter Property="MinHeight" Value="19"/>
@@ -30,7 +30,8 @@
                              Background="{StaticResource UpDownBackgroundBrush}" 
                              BorderBrush="{StaticResource UpDownBorderBrush}"
                              BorderThickness="{TemplateBinding BorderThickness}"
-                             TextAlignment="{TemplateBinding TextAlignment}">
+                             TextAlignment="{TemplateBinding TextAlignment}"
+                             IsReadOnly="{TemplateBinding IsReadOnly}">
                         <TextBox.Text>
                             <MultiBinding Converter="{StaticResource NumericBoxTextToValueConverter}" Mode="TwoWay" UpdateSourceTrigger="PropertyChanged">
                                 <MultiBinding.Bindings>

@@ -71,6 +71,11 @@ namespace ag.WPF.NumericBox
         /// </summary>
         public static readonly DependencyProperty TextAlignmentProperty = DependencyProperty.Register(nameof(TextAlignment), typeof(TextAlignment), typeof(NumericBox),
                 new FrameworkPropertyMetadata(TextAlignment.Left, OnTextAlignmentChanged));
+        /// <summary>
+        /// The identifier of the <see cref="IsReadOnly"/> dependency property.
+        /// </summary>
+        public static readonly DependencyProperty IsReadOnlyProperty = DependencyProperty.Register(nameof(IsReadOnly), typeof(bool), typeof(NumericBox),
+                new FrameworkPropertyMetadata(false, OnIsReadOnlyChanged));
         #endregion
 
         #region Public properties
@@ -117,6 +122,14 @@ namespace ag.WPF.NumericBox
         {
             get => (SolidColorBrush)GetValue(NegativeForegroundProperty);
             set => SetValue(NegativeForegroundProperty, value);
+        }
+        /// <summary>
+        /// Gets or sets the value that indicates whether NumericBox is in read-only state.
+        /// </summary>
+        public bool IsReadOnly
+        {
+            get => (bool)GetValue(IsReadOnlyProperty);
+            set => SetValue(IsReadOnlyProperty, value);
         }
         #endregion
 
@@ -220,6 +233,25 @@ namespace ag.WPF.NumericBox
             if (sender is not NumericBox box) return;
             box.OnNegativeForegroundChanged((SolidColorBrush)e.OldValue, (SolidColorBrush)e.NewValue);
         }
+
+        /// <summary>
+        /// Invoked just before the <see cref="IsReadOnlyChanged"/> event is raised on NumericBox
+        /// </summary>
+        /// <param name="oldValue">Old value</param>
+        /// <param name="newValue">New value</param>
+        private void OnIsReadOnlyChanged(bool oldValue, bool newValue)
+        {
+            var e = new RoutedPropertyChangedEventArgs<bool>(oldValue, newValue)
+            {
+                RoutedEvent = IsReadOnlyChangedEvent
+            };
+            RaiseEvent(e);
+        }
+        private static void OnIsReadOnlyChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
+        {
+            if (sender is not NumericBox box) return;
+            box.OnIsReadOnlyChanged((bool)e.OldValue, (bool)e.NewValue);
+        }
         #endregion
 
         #region Routed events
@@ -292,6 +324,20 @@ namespace ag.WPF.NumericBox
         /// </summary>
         public static readonly RoutedEvent NegativeForegroundChangedEvent = EventManager.RegisterRoutedEvent("NegativeForegroundChanged",
             RoutingStrategy.Direct, typeof(RoutedPropertyChangedEventHandler<SolidColorBrush>), typeof(NumericBox));
+
+        /// <summary>
+        /// Occurs when the <see cref="IsReadOnly"/> property has been changed in some way.
+        /// </summary>
+        public event RoutedPropertyChangedEventHandler<bool> IsReadOnlyChanged
+        {
+            add => AddHandler(IsReadOnlyChangedEvent, value);
+            remove => RemoveHandler(IsReadOnlyChangedEvent, value);
+        }
+        /// <summary>
+        /// Identifies the <see cref="IsReadOnlyChanged"/> routed event.
+        /// </summary>
+        public static readonly RoutedEvent IsReadOnlyChangedEvent = EventManager.RegisterRoutedEvent("IsReadOnlyChanged",
+            RoutingStrategy.Bubble, typeof(RoutedPropertyChangedEventHandler<bool>), typeof(NumericBox));
         #endregion
 
         #region ctor
@@ -326,6 +372,7 @@ namespace ag.WPF.NumericBox
                 _textBox.PreviewTextInput += TextBox_PreviewTextInput;
                 _textBox.TextChanged += TextBox_TextChanged;
                 _textBox.CommandBindings.Add(new CommandBinding(ApplicationCommands.Paste, pasteCommandBinding));
+                _textBox.CommandBindings.Add(new CommandBinding(ApplicationCommands.Cut, cutCommandBinding));
             }
         }
         #endregion
@@ -428,7 +475,7 @@ namespace ag.WPF.NumericBox
             }
             else if ((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
             {
-                if (!e.Key.In(Key.Home, Key.End, Key.A, Key.C, Key.V))
+                if (!e.Key.In(Key.Home, Key.End, Key.A, Key.C, Key.V, Key.X, Key.Z, Key.Y))
                     e.Handled = true;
                 return;
             }
@@ -503,15 +550,46 @@ namespace ag.WPF.NumericBox
                             : _textBox.Text.Length - (_textBox.CaretIndex + _textBox.SelectionLength) + 1;
         }
 
+        private void cutCommandBinding(object sender, ExecutedRoutedEventArgs e)
+        {
+            _Position.Offset = 0;
+            _Position.Exclude = false;
+            _Position.Key = CurrentKey.None;
+
+            if (IsReadOnly)
+            {
+                e.Handled = true;
+                return;
+            }
+
+            Clipboard.SetText(_textBox.SelectedText);
+            if (_textBox.SelectionLength != _textBox.Text.Length)
+                _textBox.Text = _textBox.Text.Substring(0, _textBox.SelectionStart) + _textBox.Text.Substring(_textBox.SelectionStart + _textBox.SelectionLength);
+            else
+                Value = null;
+        }
+
         private void pasteCommandBinding(object sender, ExecutedRoutedEventArgs e)
         {
+            _Position.Offset = 0;
+            _Position.Exclude = false;
+            _Position.Key = CurrentKey.None;
+
+            if (IsReadOnly)
+            {
+                e.Handled = true;
+                return;
+            }
+
             if (Clipboard.ContainsText())
             {
                 var text = Clipboard.GetText();
-                if (!decimal.TryParse(text, out decimal value))
+                if (!decimal.TryParse(text, out _))
                     e.Handled = true;
+                else if (_textBox.SelectionLength > 0)
+                    _textBox.SelectedText = text;
                 else
-                    Value = value;
+                    _textBox.Text = _textBox.Text.Insert(_textBox.CaretIndex, text);
             }
             else
             {
@@ -525,7 +603,6 @@ namespace ag.WPF.NumericBox
     {
         internal static bool In<T>(this T obj, params T[] values) => values.Contains(obj);
     }
-
 
     /// <summary>
     /// 
@@ -602,6 +679,8 @@ namespace ag.WPF.NumericBox
             if (value is not string stringValue) return null;
             if (!string.IsNullOrEmpty(stringValue))
                 stringValue = stringValue.Replace(culture.NumberFormat.NumberGroupSeparator, "");
+            else
+                return null;
             object[] result;
             if (stringValue != "-")
             {
