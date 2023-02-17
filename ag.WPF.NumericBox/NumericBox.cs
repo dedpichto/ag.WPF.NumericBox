@@ -25,7 +25,8 @@ namespace ag.WPF.NumericBox
             None,
             Number,
             Delete,
-            Back
+            Back,
+            Decimal
         }
 
         private struct CurrentPosition
@@ -391,7 +392,7 @@ namespace ag.WPF.NumericBox
         {
             if (_Position.Exclude)
                 return;
-            if (_Position.Key.In(CurrentKey.Number, CurrentKey.Back))
+            if (_Position.Key.In(CurrentKey.Number, CurrentKey.Back, CurrentKey.Decimal))
             {
                 _textBox.CaretIndex = _textBox.Text.Length - _Position.Offset;
             }
@@ -408,11 +409,21 @@ namespace ag.WPF.NumericBox
                 }
                 else if (e.Text == CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator)
                 {
-                    if (DecimalPlaces > 0)
+                    if (DecimalPlaces == 0)
+                    {
+                        e.Handled = true;
+                        return;
+                    }
+
+                    if (_textBox.Text != "-")
                     {
                         _textBox.CaretIndex = _textBox.Text.IndexOf(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator) + 1;
+                        e.Handled = true;
                     }
-                    e.Handled = true;
+                    else
+                    {
+                        _Position.Key = CurrentKey.Decimal;
+                    }
                     return;
                 }
                 else if (e.Text == CultureInfo.CurrentCulture.NumberFormat.NegativeSign)
@@ -426,13 +437,6 @@ namespace ag.WPF.NumericBox
                         e.Handled = true;
                         return;
                     }
-                    //if (_textBox.SelectionLength == _textBox.Text.Length)
-                    //    Value = null;
-                    //if (Value == null)
-                    //{
-                    //    setTextBinding(true);
-                    //    return;
-                    //}
                 }
                 else if (!e.Text.In("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"))
                 {
@@ -533,10 +537,20 @@ namespace ag.WPF.NumericBox
         #region Private procedures
         private void setPositionOffset()
         {
-            if (_textBox.Text == "-" || _textBox.Text.Length == _textBox.SelectionLength || Value == null)
+            if ((_textBox.Text == "-" && _Position.Key != CurrentKey.Decimal) || _textBox.Text.Length == _textBox.SelectionLength || Value == null)
             {
                 _Position.Exclude = true;
             }
+
+            if (_textBox.Text == "-" && _Position.Key == CurrentKey.Decimal)
+            {
+                if (DecimalPlaces > 0)
+                {
+                    _Position.Offset = (int)DecimalPlaces;
+                    return;
+                }
+            }
+
             var sepPos = _textBox.Text.IndexOf(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator);
 
             _Position.Offset = _textBox.Text.Length == _textBox.SelectionLength
@@ -691,7 +705,11 @@ namespace ag.WPF.NumericBox
             object[] result;
             if (stringValue != "-")
             {
-                if (double.TryParse(stringValue, out double doubleValue))
+                if (stringValue == "-.")
+                {
+                    result = new object[] { -Statics.Epsilon };
+                }
+                else if (double.TryParse(stringValue, out double doubleValue))
                 {
                     if (doubleValue <= (double)decimal.MaxValue && doubleValue >= (double)decimal.MinValue)
                         result = new object[] { decimal.Parse(stringValue, NumberStyles.Any) };
