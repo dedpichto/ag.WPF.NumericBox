@@ -394,7 +394,10 @@ namespace ag.WPF.NumericBox
                 return;
             if (_Position.Key.In(CurrentKey.Number, CurrentKey.Back, CurrentKey.Decimal))
             {
-                _textBox.CaretIndex = _textBox.Text.Length - _Position.Offset;
+                if (_textBox.Text.Length >= _Position.Offset)
+                {
+                    _textBox.CaretIndex = _textBox.Text.Length - _Position.Offset;
+                }
             }
         }
 
