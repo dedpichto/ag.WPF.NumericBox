@@ -14,7 +14,7 @@ namespace ag.WPF.NumericBox
     /// </summary>
     /// 
     #region Named parts
-    [TemplatePart(Name = ElementText, Type = typeof(TextBox))]
+    [TemplatePart(Name = _elementText, Type = typeof(TextBox))]
     #endregion
 
     public class NumericBox : Control
@@ -37,21 +37,21 @@ namespace ag.WPF.NumericBox
         }
 
         #region Constants
-        private const string ElementText = "PART_Text";
+        private const string _elementText = "PART_Text";
         #endregion
 
         #region Elements
         private TextBox _textBox;
         #endregion
 
-        private CurrentPosition _Position;
+        private CurrentPosition _position;
 
         #region Dependency properties
         /// <summary>
         /// The identifier of the <see cref="Value"/> dependency property.
         /// </summary>
         public static readonly DependencyProperty ValueProperty = DependencyProperty.Register(nameof(Value), typeof(decimal?), typeof(NumericBox),
-                new FrameworkPropertyMetadata(null, OnValueChanged));
+                new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnValueChanged));
         /// <summary>
         /// The identifier of the <see cref="DecimalPlaces"/> dependency property.
         /// </summary>
@@ -364,7 +364,7 @@ namespace ag.WPF.NumericBox
                 _textBox.TextChanged -= TextBox_TextChanged;
                 _textBox.CommandBindings.Clear();
             }
-            _textBox = GetTemplateChild(ElementText) as TextBox;
+            _textBox = GetTemplateChild(_elementText) as TextBox;
             if (_textBox != null)
             {
                 _textBox.LostFocus += TextBox_LostFocus;
@@ -390,13 +390,13 @@ namespace ag.WPF.NumericBox
 
         private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (_Position.Exclude)
+            if (_position.Exclude)
                 return;
-            if (_Position.Key.In(CurrentKey.Number, CurrentKey.Back, CurrentKey.Decimal))
+            if (_position.Key.In(CurrentKey.Number, CurrentKey.Back, CurrentKey.Decimal))
             {
-                if (_textBox.Text.Length >= _Position.Offset)
+                if (_textBox.Text.Length >= _position.Offset)
                 {
-                    _textBox.CaretIndex = _textBox.Text.Length - _Position.Offset;
+                    _textBox.CaretIndex = _textBox.Text.Length - _position.Offset;
                 }
             }
         }
@@ -425,7 +425,7 @@ namespace ag.WPF.NumericBox
                     }
                     else
                     {
-                        _Position.Key = CurrentKey.Decimal;
+                        _position.Key = CurrentKey.Decimal;
                     }
                     return;
                 }
@@ -456,7 +456,7 @@ namespace ag.WPF.NumericBox
                 }
                 else
                 {
-                    _Position.Key = CurrentKey.Number;
+                    _position.Key = CurrentKey.Number;
                 }
             }
             finally
@@ -470,9 +470,9 @@ namespace ag.WPF.NumericBox
 
         private void TextBox_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            _Position.Key = CurrentKey.None;
-            _Position.Offset = 0;
-            _Position.Exclude = false;
+            _position.Key = CurrentKey.None;
+            _position.Offset = 0;
+            _position.Exclude = false;
 
             if ((Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift)
             {
@@ -513,7 +513,7 @@ namespace ag.WPF.NumericBox
                     }
                     break;
                 case Key.Back:
-                    _Position.Key = CurrentKey.Back;
+                    _position.Key = CurrentKey.Back;
                     if ((_textBox.SelectionLength == _textBox.Text.Length) || (_textBox.CaretIndex == 1 && _textBox.Text.Length == 1))
                     {
                         Value = null;
@@ -540,38 +540,38 @@ namespace ag.WPF.NumericBox
         #region Private procedures
         private void setPositionOffset()
         {
-            if ((_textBox.Text == "-" && _Position.Key != CurrentKey.Decimal) || _textBox.Text.Length == _textBox.SelectionLength || Value == null)
+            if ((_textBox.Text == "-" && _position.Key != CurrentKey.Decimal) || _textBox.Text.Length == _textBox.SelectionLength || Value == null)
             {
-                _Position.Exclude = true;
+                _position.Exclude = true;
             }
 
-            if (_textBox.Text == "-" && _Position.Key == CurrentKey.Decimal)
+            if (_textBox.Text == "-" && _position.Key == CurrentKey.Decimal)
             {
                 if (DecimalPlaces > 0)
                 {
-                    _Position.Offset = (int)DecimalPlaces;
+                    _position.Offset = (int)DecimalPlaces;
                     return;
                 }
             }
 
             var sepPos = _textBox.Text.IndexOf(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator);
 
-            _Position.Offset = _textBox.Text.Length == _textBox.SelectionLength
+            _position.Offset = _textBox.Text.Length == _textBox.SelectionLength
                 ? _textBox.Text.Length - 1
                 : sepPos == -1
                     ? _textBox.Text.Length - (_textBox.CaretIndex + _textBox.SelectionLength)
                     : _textBox.CaretIndex <= sepPos
                         ? _textBox.Text.Length - (_textBox.CaretIndex + _textBox.SelectionLength)
-                        : _Position.Key == CurrentKey.Number
+                        : _position.Key == CurrentKey.Number
                             ? _textBox.Text.Length - (_textBox.CaretIndex + _textBox.SelectionLength) - 1
                             : _textBox.Text.Length - (_textBox.CaretIndex + _textBox.SelectionLength) + 1;
         }
 
         private void cutCommandBinding(object sender, ExecutedRoutedEventArgs e)
         {
-            _Position.Offset = 0;
-            _Position.Exclude = false;
-            _Position.Key = CurrentKey.None;
+            _position.Offset = 0;
+            _position.Exclude = false;
+            _position.Key = CurrentKey.None;
 
             if (IsReadOnly)
             {
@@ -588,9 +588,9 @@ namespace ag.WPF.NumericBox
 
         private void pasteCommandBinding(object sender, ExecutedRoutedEventArgs e)
         {
-            _Position.Offset = 0;
-            _Position.Exclude = false;
-            _Position.Key = CurrentKey.None;
+            _position.Offset = 0;
+            _position.Exclude = false;
+            _position.Key = CurrentKey.None;
 
             if (IsReadOnly)
             {
@@ -607,7 +607,7 @@ namespace ag.WPF.NumericBox
                 }
                 else
                 {
-                    _Position.Key = CurrentKey.Number;
+                    _position.Key = CurrentKey.Number;
                     setPositionOffset();
                     if (_textBox.SelectionLength > 0)
                         _textBox.SelectedText = text;
