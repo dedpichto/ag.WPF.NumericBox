@@ -381,7 +381,7 @@ namespace ag.WPF.NumericBox
         #region Event handlers
         private void TextBox_LostFocus(object sender, RoutedEventArgs e)
         {
-            if (_textBox.Text == "-")
+            if (_textBox.Text == CultureInfo.CurrentCulture.NumberFormat.NegativeSign)
             {
                 Value = null;
                 BindingOperations.GetBindingExpression(_textBox, TextBox.TextProperty).UpdateSource();
@@ -418,7 +418,7 @@ namespace ag.WPF.NumericBox
                         return;
                     }
 
-                    if (_textBox.Text != "-")
+                    if (_textBox.Text != CultureInfo.CurrentCulture.NumberFormat.NegativeSign)
                     {
                         _textBox.CaretIndex = _textBox.Text.IndexOf(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator) + 1;
                         e.Handled = true;
@@ -540,12 +540,12 @@ namespace ag.WPF.NumericBox
         #region Private procedures
         private void setPositionOffset()
         {
-            if ((_textBox.Text == "-" && _position.Key != CurrentKey.Decimal) || _textBox.Text.Length == _textBox.SelectionLength || Value == null)
+            if ((_textBox.Text == CultureInfo.CurrentCulture.NumberFormat.NegativeSign && _position.Key != CurrentKey.Decimal) || _textBox.Text.Length == _textBox.SelectionLength || Value == null)
             {
                 _position.Exclude = true;
             }
 
-            if (_textBox.Text == "-" && _position.Key == CurrentKey.Decimal)
+            if (_textBox.Text == CultureInfo.CurrentCulture.NumberFormat.NegativeSign && _position.Key == CurrentKey.Decimal)
             {
                 if (DecimalPlaces > 0)
                 {
@@ -675,7 +675,7 @@ namespace ag.WPF.NumericBox
         {
             if (values[0] is not decimal decimalValue || values[1] is not uint decimalPlaces || values[2] is not bool useSeparator) return "";
             if (decimalValue == Statics.Epsilon)
-                return "-";
+                return CultureInfo.CurrentCulture.NumberFormat.NegativeSign;
             var partInt = decimal.Truncate(decimalValue);
             var partFraction =
                 Math.Abs(decimal.Truncate((decimalValue - partInt) * (int)Math.Pow(10.0, decimalPlaces)));
@@ -683,7 +683,7 @@ namespace ag.WPF.NumericBox
             var formatFraction = new string('0', (int)decimalPlaces);
             var stringInt = partInt.ToString(formatInt);
             if (decimalValue < 0 && partInt == 0)
-                stringInt = $"-{stringInt}";
+                stringInt = $"{CultureInfo.CurrentCulture.NumberFormat.NegativeSign}{stringInt}";
             var result = decimalPlaces > 0
                 ? $"{stringInt}{culture.NumberFormat.NumberDecimalSeparator}{partFraction.ToString(formatFraction)}"
                 : stringInt;
@@ -706,9 +706,9 @@ namespace ag.WPF.NumericBox
             else
                 return null;
             object[] result;
-            if (stringValue != "-")
+            if (stringValue != CultureInfo.CurrentCulture.NumberFormat.NegativeSign)
             {
-                if (stringValue == "-.")
+                if (stringValue == $"{CultureInfo.CurrentCulture.NumberFormat.NegativeSign}{CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator}")
                 {
                     result = new object[] { -Statics.Epsilon };
                 }
