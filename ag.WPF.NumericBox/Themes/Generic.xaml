@@ -38,6 +38,7 @@
                                     <Binding Path="Value" RelativeSource="{RelativeSource Mode=TemplatedParent}"/>
                                     <Binding Path="DecimalPlaces" RelativeSource="{RelativeSource Mode=TemplatedParent}"/>
                                     <Binding Path="UseGroupSeparator" RelativeSource="{RelativeSource Mode=TemplatedParent}"/>
+                                    <Binding Path="ShowTrailingZeros" RelativeSource="{RelativeSource Mode=TemplatedParent}"/>
                                 </MultiBinding.Bindings>
                             </MultiBinding>
                         </TextBox.Text>

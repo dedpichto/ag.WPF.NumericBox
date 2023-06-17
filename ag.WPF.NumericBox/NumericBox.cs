@@ -77,6 +77,11 @@ namespace ag.WPF.NumericBox
         /// </summary>
         public static readonly DependencyProperty IsReadOnlyProperty = DependencyProperty.Register(nameof(IsReadOnly), typeof(bool), typeof(NumericBox),
                 new FrameworkPropertyMetadata(false, OnIsReadOnlyChanged));
+        /// <summary>
+        /// The identifier of the <see cref="ShowTrailingZeros"/> dependency property.
+        /// </summary>
+        public static readonly DependencyProperty ShowTrailingZerosProperty = DependencyProperty.Register(nameof(ShowTrailingZeros), typeof(bool), typeof(NumericBox),
+                new FrameworkPropertyMetadata(true, OnShowTrailingZerosChanged));
         #endregion
 
         #region Public properties
@@ -131,6 +136,14 @@ namespace ag.WPF.NumericBox
         {
             get => (bool)GetValue(IsReadOnlyProperty);
             set => SetValue(IsReadOnlyProperty, value);
+        }
+        /// <summary>
+        /// Gets or sets the value that indicates whether trailing zeroes in decimal part of NumericBox should be shown.
+        /// </summary>
+        public bool ShowTrailingZeros
+        {
+            get => (bool)GetValue(ShowTrailingZerosProperty);
+            set => SetValue(ShowTrailingZerosProperty, value);
         }
         #endregion
 
@@ -253,6 +266,25 @@ namespace ag.WPF.NumericBox
             if (sender is not NumericBox box) return;
             box.OnIsReadOnlyChanged((bool)e.OldValue, (bool)e.NewValue);
         }
+
+        /// <summary>
+        /// Invoked just before the <see cref="ShowTrailingZerosChanged"/> event is raised on NumericBox
+        /// </summary>
+        /// <param name="oldValue">Old value</param>
+        /// <param name="newValue">New value</param>
+        private void OnShowTrailingZerosChanged(bool oldValue, bool newValue)
+        {
+            var e = new RoutedPropertyChangedEventArgs<bool>(oldValue, newValue)
+            {
+                RoutedEvent = ShowTrailingZerosChangedEvent
+            };
+            RaiseEvent(e);
+        }
+        private static void OnShowTrailingZerosChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
+        {
+            if (sender is not NumericBox box) return;
+            box.OnShowTrailingZerosChanged((bool)e.OldValue, (bool)e.NewValue);
+        }
         #endregion
 
         #region Routed events
@@ -339,6 +371,21 @@ namespace ag.WPF.NumericBox
         /// </summary>
         public static readonly RoutedEvent IsReadOnlyChangedEvent = EventManager.RegisterRoutedEvent("IsReadOnlyChanged",
             RoutingStrategy.Bubble, typeof(RoutedPropertyChangedEventHandler<bool>), typeof(NumericBox));
+
+        /// <summary>
+        /// Occurs when the <see cref="ShowTrailingZeros"/> property has been changed in some way.
+        /// </summary>
+        public event RoutedPropertyChangedEventHandler<bool> ShowTrailingZerosChanged
+        {
+            add => AddHandler(ShowTrailingZerosChangedEvent, value);
+            remove => RemoveHandler(ShowTrailingZerosChangedEvent, value);
+        }
+        /// <summary>
+        /// Identifies the <see cref="ShowTrailingZerosChanged"/> routed event.
+        /// </summary>
+        public static readonly RoutedEvent ShowTrailingZerosChangedEvent = EventManager.RegisterRoutedEvent("ShowTrailingZerosChanged",
+            RoutingStrategy.Bubble, typeof(RoutedPropertyChangedEventHandler<bool>), typeof(NumericBox));
+
         #endregion
 
         #region ctor
@@ -384,12 +431,14 @@ namespace ag.WPF.NumericBox
             if (_textBox.Text == CultureInfo.CurrentCulture.NumberFormat.NegativeSign)
             {
                 Value = null;
-                BindingOperations.GetBindingExpression(_textBox, TextBox.TextProperty).UpdateSource();
+                BindingOperations.GetBindingExpression(_textBox, TextBox.TextProperty)?.UpdateSource();
             }
         }
 
         private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
+            if (!ShowTrailingZeros)
+                return;
             if (_position.Exclude)
                 return;
             if (_position.Key.In(CurrentKey.Number, CurrentKey.Back, CurrentKey.Decimal))
@@ -447,7 +496,7 @@ namespace ag.WPF.NumericBox
                     return;
                 }
 
-                if (e.Text.In("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")
+                if (ShowTrailingZeros && e.Text.In("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")
                     && _textBox.Text.Contains(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator)
                     && _textBox.CaretIndex == _textBox.Text.Length)
                 {
@@ -540,6 +589,7 @@ namespace ag.WPF.NumericBox
         #region Private procedures
         private void setPositionOffset()
         {
+            if (!ShowTrailingZeros) return;
             if ((_textBox.Text == CultureInfo.CurrentCulture.NumberFormat.NegativeSign && _position.Key != CurrentKey.Decimal) || _textBox.Text.Length == _textBox.SelectionLength || Value == null)
             {
                 _position.Exclude = true;
@@ -663,6 +713,14 @@ namespace ag.WPF.NumericBox
     /// </summary>
     public class NumericBoxTextToValueConverter : IMultiValueConverter
     {
+        private string getRealFractionString(decimal value, CultureInfo culture)
+        {
+            var arr = value.ToString().Split(culture.NumberFormat.NumberDecimalSeparator[0]);
+            if (arr.Length == 2)
+                return arr[1];
+            return null;
+        }
+
         /// <summary>
         /// Converts decimal value to string.
         /// </summary>
@@ -676,16 +734,34 @@ namespace ag.WPF.NumericBox
             if (values[0] is not decimal decimalValue || values[1] is not uint decimalPlaces || values[2] is not bool useSeparator) return "";
             if (decimalValue == Statics.Epsilon)
                 return CultureInfo.CurrentCulture.NumberFormat.NegativeSign;
+            else if (decimalValue == -Statics.Epsilon)
+                return null;
+            var showTrailing = true;
+            if (values.Length > 3 && values[3] is bool bl && !bl)
+                showTrailing = false;
             var partInt = decimal.Truncate(decimalValue);
             var partFraction =
                 Math.Abs(decimal.Truncate((decimalValue - partInt) * (int)Math.Pow(10.0, decimalPlaces)));
             var formatInt = useSeparator ? "#" + culture.NumberFormat.NumberGroupSeparator + "##0" : "##0";
             var formatFraction = new string('0', (int)decimalPlaces);
             var stringInt = partInt.ToString(formatInt);
+            var stringFraction = partFraction.ToString(formatFraction);
+            if (!showTrailing && stringFraction.EndsWith("0"))
+            {
+                var realDecimalString = getRealFractionString(decimalValue, culture);
+                if (realDecimalString == null || realDecimalString.Length >= decimalPlaces)
+                {
+                    stringFraction = stringFraction.TrimEnd('0');
+                }
+                else
+                {
+                    stringFraction = realDecimalString;
+                }
+            }
             if (decimalValue < 0 && partInt == 0)
                 stringInt = $"{CultureInfo.CurrentCulture.NumberFormat.NegativeSign}{stringInt}";
             var result = decimalPlaces > 0
-                ? $"{stringInt}{culture.NumberFormat.NumberDecimalSeparator}{partFraction.ToString(formatFraction)}"
+                ? $"{stringInt}{culture.NumberFormat.NumberDecimalSeparator}{stringFraction}"
                 : stringInt;
             return result;
         }
@@ -700,15 +776,51 @@ namespace ag.WPF.NumericBox
         /// <returns>Decimal.</returns>
         public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
         {
+            //if (value is not string stringValue) return null;
+            //if (!string.IsNullOrEmpty(stringValue))
+            //    stringValue = stringValue.Replace(culture.NumberFormat.NumberGroupSeparator, "");
+            //else
+            //    return null;
+            //object[] result;
+            //if (stringValue != CultureInfo.CurrentCulture.NumberFormat.NegativeSign)
+            //{
+            //    if (stringValue == $"{CultureInfo.CurrentCulture.NumberFormat.NegativeSign}{CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator}")
+            //    {
+            //        result = new object[] { -Statics.Epsilon };
+            //    }
+            //    else if (double.TryParse(stringValue, out double doubleValue))
+            //    {
+            //        if (doubleValue <= (double)decimal.MaxValue && doubleValue >= (double)decimal.MinValue)
+            //            result = new object[] { decimal.Parse(stringValue, NumberStyles.Any) };
+            //        else if (doubleValue > (double)decimal.MaxValue)
+            //            result = new object[] { decimal.MaxValue };
+            //        else
+            //            result = new object[] { decimal.MinValue };
+            //    }
+            //    else
+            //    {
+            //        result = null;
+            //    }
+            //}
+            //else
+            //{
+            //    result = new object[] { Statics.Epsilon };
+            //}
+            //return result;
+
             if (value is not string stringValue) return null;
             if (!string.IsNullOrEmpty(stringValue))
                 stringValue = stringValue.Replace(culture.NumberFormat.NumberGroupSeparator, "");
             else
                 return null;
             object[] result;
-            if (stringValue != CultureInfo.CurrentCulture.NumberFormat.NegativeSign)
+            if (stringValue != culture.NumberFormat.NegativeSign)
             {
-                if (stringValue == $"{CultureInfo.CurrentCulture.NumberFormat.NegativeSign}{CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator}")
+                if (stringValue == $"{culture.NumberFormat.NegativeSign}{culture.NumberFormat.NumberDecimalSeparator}")
+                {
+                    result = new object[] { -Statics.Epsilon };
+                }
+                else if (stringValue == culture.NumberFormat.NumberDecimalSeparator)
                 {
                     result = new object[] { -Statics.Epsilon };
                 }
