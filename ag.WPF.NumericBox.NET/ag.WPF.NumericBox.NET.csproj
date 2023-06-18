@@ -13,14 +13,13 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageTags>WPF NumericBox .NET Framework Custom</PackageTags>
     <PackageId />
-    <Version>1.0.3</Version>
+    <Version>1.1.0</Version>
     <RepositoryUrl>https://github.com/dedpichto/ag.WPF.NumericBox</RepositoryUrl>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Include="..\ag.WPF.NumericBox\NumericBox.cs" Link="NumericBox.cs" />
-    <Compile Include="..\ag.WPF.NumericBox\Statics.cs" Link="Statics.cs" />
   </ItemGroup>
 
   <ItemGroup>

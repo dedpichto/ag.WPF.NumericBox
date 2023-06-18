@@ -39,6 +39,7 @@
                                     <Binding Path="DecimalPlaces" RelativeSource="{RelativeSource Mode=TemplatedParent}"/>
                                     <Binding Path="UseGroupSeparator" RelativeSource="{RelativeSource Mode=TemplatedParent}"/>
                                     <Binding Path="ShowTrailingZeros" RelativeSource="{RelativeSource Mode=TemplatedParent}"/>
+                                    <Binding Path="IsFocused" ElementName="PART_Text" Mode="OneWay"/>
                                 </MultiBinding.Bindings>
                             </MultiBinding>
                         </TextBox.Text>
