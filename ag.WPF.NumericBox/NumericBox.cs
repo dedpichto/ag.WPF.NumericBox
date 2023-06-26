@@ -435,10 +435,10 @@ namespace ag.WPF.NumericBox
             {
                 Value = null;
             }
-            else if (_textBox.Text.EndsWith(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator) && !ShowTrailingZeros)
-            {
-                _textBox.Text = _textBox.Text.Substring(0, _textBox.Text.Length - 1);
-            }
+            //else if (_textBox.Text.EndsWith(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator) && !ShowTrailingZeros)
+            //{
+            //    _textBox.Text = _textBox.Text.Substring(0, _textBox.Text.Length - 1);
+            //}
         }
 
         private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
