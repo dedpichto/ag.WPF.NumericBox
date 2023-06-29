@@ -40,6 +40,7 @@ NegativeForeground | SolidColorBrush | Gets or sets the Brush to apply to the te
 UseGroupSeparator | bool | Gets or sets the value that indicates whether group separator is used for number formatting | True
 Value | decimal? | Gets or sets the value of NumericBox | null
 TextAlignment | TextAlignment | Gets or sets the text alignment of NumericBox | Left
+ShowTrailingZeros | bool | Gets or sets the value that indicates whether trailing zeroes in decimal part of NumericBox should be shown | True
 
 ## Events
 
