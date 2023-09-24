@@ -406,29 +406,40 @@ namespace ag.WPF.NumericBox
             base.OnApplyTemplate();
             if (_textBox != null)
             {
-                _textBox.LostFocus -= TextBox_LostFocus;
-                _textBox.GotFocus -= TextBox_GotFocus;
-                _textBox.PreviewKeyDown -= TextBox_PreviewKeyDown;
-                _textBox.PreviewTextInput -= TextBox_PreviewTextInput;
-                _textBox.TextChanged -= TextBox_TextChanged;
+                _textBox.LostFocus -= textBox_LostFocus;
+                _textBox.GotFocus -= textBox_GotFocus;
+                _textBox.PreviewKeyDown -= textBox_PreviewKeyDown;
+                _textBox.PreviewTextInput -= textBox_PreviewTextInput;
+                _textBox.TextChanged -= textBox_TextChanged;
+                _textBox.PreviewMouseLeftButtonDown -= textBox_PreviewMouseLeftButtonDown;
                 _textBox.CommandBindings.Clear();
             }
             _textBox = GetTemplateChild(_elementText) as TextBox;
             if (_textBox != null)
             {
-                _textBox.LostFocus += TextBox_LostFocus;
-                _textBox.GotFocus += TextBox_GotFocus;
-                _textBox.PreviewKeyDown += TextBox_PreviewKeyDown;
-                _textBox.PreviewTextInput += TextBox_PreviewTextInput;
-                _textBox.TextChanged += TextBox_TextChanged;
+                _textBox.LostFocus += textBox_LostFocus;
+                _textBox.GotFocus += textBox_GotFocus;
+                _textBox.PreviewKeyDown += textBox_PreviewKeyDown;
+                _textBox.PreviewTextInput += textBox_PreviewTextInput;
+                _textBox.TextChanged += textBox_TextChanged;
+                _textBox.PreviewMouseLeftButtonDown += textBox_PreviewMouseLeftButtonDown;
                 _textBox.CommandBindings.Add(new CommandBinding(ApplicationCommands.Paste, pasteCommandBinding));
                 _textBox.CommandBindings.Add(new CommandBinding(ApplicationCommands.Cut, cutCommandBinding));
             }
         }
+
+
+
         #endregion
 
         #region Event handlers
-        private void TextBox_LostFocus(object sender, RoutedEventArgs e)
+        private void textBox_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ClickCount == 2)
+                _textBox.SelectAll();
+        }
+
+        private void textBox_LostFocus(object sender, RoutedEventArgs e)
         {
             _gotFocus = false;
             if (_textBox.Text == CultureInfo.CurrentCulture.NumberFormat.NegativeSign)
@@ -441,7 +452,7 @@ namespace ag.WPF.NumericBox
             //}
         }
 
-        private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
+        private void textBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (!ShowTrailingZeros)
             {
@@ -464,7 +475,7 @@ namespace ag.WPF.NumericBox
             }
         }
 
-        private void TextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        private void textBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
             try
             {
@@ -547,7 +558,7 @@ namespace ag.WPF.NumericBox
             }
         }
 
-        private void TextBox_PreviewKeyDown(object sender, KeyEventArgs e)
+        private void textBox_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             _gotFocus = false;
             _position.Key = CurrentKey.None;
@@ -614,7 +625,7 @@ namespace ag.WPF.NumericBox
             }
         }
 
-        private void TextBox_GotFocus(object sender, RoutedEventArgs e)
+        private void textBox_GotFocus(object sender, RoutedEventArgs e)
         {
             _gotFocus = true;
             _textBox.SelectAll();
