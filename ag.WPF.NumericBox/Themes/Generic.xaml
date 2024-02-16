@@ -53,6 +53,11 @@
                             </MultiBinding>
                         </TextBox.Foreground>
                     </TextBox>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="PART_Text" Property="Foreground" Value="{DynamicResource {x:Static SystemColors.GrayTextBrush}}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
