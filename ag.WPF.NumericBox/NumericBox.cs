@@ -84,9 +84,23 @@ namespace ag.WPF.NumericBox
         /// </summary>
         public static readonly DependencyProperty ShowTrailingZerosProperty = DependencyProperty.Register(nameof(ShowTrailingZeros), typeof(bool), typeof(NumericBox),
                 new FrameworkPropertyMetadata(true, OnShowTrailingZerosChanged));
+        /// <summary>
+        /// The identifier of the <see cref="TruncateFractionalPart"/> dependency property.
+        /// </summary>
+        public static readonly DependencyProperty TruncateFractionalPartProperty = DependencyProperty.Register(nameof(TruncateFractionalPart), typeof(bool), typeof(NumericBox),
+                new FrameworkPropertyMetadata(false, OnTruncateFractionalPartChanged));
+
         #endregion
 
         #region Public properties
+        /// <summary>
+        /// Gets or sets the property specified whether fractional part of decimal value will be truncated (True) accordingly to <see cref="DecimalPlaces"/> or rounded (False)
+        /// </summary>
+        public bool TruncateFractionalPart
+        {
+            get => (bool)GetValue(TruncateFractionalPartProperty);
+            set => SetValue(TruncateFractionalPartProperty, value);
+        }
         /// <summary>
         /// Gets or sets the text alignment of NumericBox.
         /// </summary>
@@ -287,6 +301,25 @@ namespace ag.WPF.NumericBox
             if (sender is not NumericBox box) return;
             box.OnShowTrailingZerosChanged((bool)e.OldValue, (bool)e.NewValue);
         }
+
+        /// <summary>
+        /// Invoked just before the <see cref="TruncateFractionalPartChanged"/> event is raised on NumericBox
+        /// </summary>
+        /// <param name="oldValue">Old value</param>
+        /// <param name="newValue">New value</param>
+        private void OnTruncateFractionalPartChanged(bool oldValue, bool newValue)
+        {
+            var e = new RoutedPropertyChangedEventArgs<bool>(oldValue, newValue)
+            {
+                RoutedEvent = TruncateFractionalPartChangedEvent
+            };
+            RaiseEvent(e);
+        }
+        private static void OnTruncateFractionalPartChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
+        {
+            if (sender is not NumericBox box) return;
+            box.OnTruncateFractionalPartChanged((bool)e.OldValue, (bool)e.NewValue);
+        }
         #endregion
 
         #region Routed events
@@ -386,6 +419,20 @@ namespace ag.WPF.NumericBox
         /// Identifies the <see cref="ShowTrailingZerosChanged"/> routed event.
         /// </summary>
         public static readonly RoutedEvent ShowTrailingZerosChangedEvent = EventManager.RegisterRoutedEvent("ShowTrailingZerosChanged",
+            RoutingStrategy.Bubble, typeof(RoutedPropertyChangedEventHandler<bool>), typeof(NumericBox));
+
+        /// <summary>
+        /// Occurs when the <see cref="TruncateFractionalPart"/> property has been changed in some way.
+        /// </summary>
+        public event RoutedPropertyChangedEventHandler<bool> TruncateFractionalPartChanged
+        {
+            add => AddHandler(TruncateFractionalPartChangedEvent, value);
+            remove => RemoveHandler(TruncateFractionalPartChangedEvent, value);
+        }
+        /// <summary>
+        /// Identifies the <see cref="TruncateFractionalPartChanged"/> routed event.
+        /// </summary>
+        public static readonly RoutedEvent TruncateFractionalPartChangedEvent = EventManager.RegisterRoutedEvent("TruncateFractionalPartChanged",
             RoutingStrategy.Bubble, typeof(RoutedPropertyChangedEventHandler<bool>), typeof(NumericBox));
 
         #endregion
@@ -799,10 +846,13 @@ namespace ag.WPF.NumericBox
             var addMinus = false;
             var showTrailing = true;
             var isFocused = false;
+            var truncate = false;
             if (values.Length > 3 && values[3] is bool bl && !bl)
                 showTrailing = false;
             if (values.Length > 4 && values[4] is bool fc)
                 isFocused = fc;
+            if (values.Length > 5 && values[5] is bool tr)
+                truncate = tr;
 
             if (decimalValue == EPSILON)
             {
@@ -833,29 +883,69 @@ namespace ag.WPF.NumericBox
                 return null;
 
             var partInt = decimal.Truncate(decimalValue);
-            var partFraction =
-                Math.Abs(decimal.Truncate((decimalValue - partInt) * (int)Math.Pow(10.0, decimalPlaces)));
+            var fractionCount = truncate ? decimalPlaces : BitConverter.GetBytes(decimal.GetBits(decimalValue)[3])[2];
+
+            var partFraction = Math.Abs(decimal.Truncate((decimalValue - partInt) * (int)Math.Pow(10.0, fractionCount)));
+
             var formatInt = useSeparator ? "#" + culture.NumberFormat.NumberGroupSeparator + "##0" : "##0";
             var formatFraction = new string('0', (int)decimalPlaces);
             var stringInt = partInt.ToString(formatInt);
-            var stringFraction = partFraction.ToString(formatFraction);
-            if (!showTrailing && stringFraction.EndsWith("0"))
+
+            string result;
+            if (truncate)
             {
-                var realDecimalString = getRealFractionString(decimalValue, culture);
-                if (realDecimalString == null || realDecimalString.Length >= decimalPlaces)
+                var stringFraction = partFraction.ToString(formatFraction);
+                if (!showTrailing && stringFraction.EndsWith("0"))
                 {
-                    stringFraction = stringFraction.TrimEnd('0');
+                    var realDecimalString = getRealFractionString(decimalValue, culture);
+                    if (realDecimalString == null || realDecimalString.Length >= decimalPlaces)
+                    {
+                        stringFraction = stringFraction.TrimEnd('0');
+                    }
+                    else
+                    {
+                        stringFraction = realDecimalString;
+                    }
                 }
-                else
-                {
-                    stringFraction = realDecimalString;
-                }
+                if ((decimalValue < 0 && partInt == 0) || addMinus)
+                    stringInt = $"{CultureInfo.CurrentCulture.NumberFormat.NegativeSign}{stringInt}";
+                result = decimalPlaces > 0
+                    ? string.IsNullOrEmpty(stringFraction) && !isFocused ? stringInt : $"{stringInt}{culture.NumberFormat.NumberDecimalSeparator}{stringFraction}"
+                    : stringInt;
             }
-            if ((decimalValue < 0 && partInt == 0)||addMinus)
-                stringInt = $"{CultureInfo.CurrentCulture.NumberFormat.NegativeSign}{stringInt}";
-            var result = decimalPlaces > 0
-                ? string.IsNullOrEmpty(stringFraction) && !isFocused ? stringInt : $"{stringInt}{culture.NumberFormat.NumberDecimalSeparator}{stringFraction}"
-                : stringInt;
+            else
+            {
+                var wholeFraction = partFraction / (decimal)Math.Pow(10, fractionCount);
+                var wholeNumber = partInt >= 0 ? partInt + wholeFraction : partInt - wholeFraction;
+                var format = $"{formatInt}{culture.NumberFormat.NumberDecimalSeparator}{formatFraction}";
+
+                result = wholeNumber.ToString(format);
+                if (!showTrailing && result.EndsWith("0"))
+                {
+                    result = result.TrimEnd('0');
+                }
+                if ((decimalValue < 0 && partInt == 0) || addMinus)
+                    result = $"{CultureInfo.CurrentCulture.NumberFormat.NegativeSign}{result}";
+                result = result.TrimEnd(culture.NumberFormat.NumberDecimalSeparator[0]);
+                //if (partFraction == 0)
+                //{
+                //    result = stringInt;
+                //}
+                //else
+                //{
+                //    var wholeFraction = partFraction / (decimal)Math.Pow(10, fractionCount);
+                //    var wholeNumber = partInt >= 0 ? partInt + wholeFraction : partInt - wholeFraction;
+                //    var format = $"{formatInt}{culture.NumberFormat.NumberDecimalSeparator}{formatFraction}";
+
+                //    result = wholeNumber.ToString(format);
+                //    if (!showTrailing && result.EndsWith("0"))
+                //    {
+                //        result = result.Trim('0');
+                //    }
+                //    if ((decimalValue < 0 && partInt == 0) || addMinus)
+                //        result = $"{CultureInfo.CurrentCulture.NumberFormat.NegativeSign}{result}";
+                //}
+            }
             return result;
         }
 

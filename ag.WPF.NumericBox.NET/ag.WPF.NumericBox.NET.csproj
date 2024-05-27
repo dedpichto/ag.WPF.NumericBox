@@ -13,9 +13,10 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageTags>WPF NumericBox .NET Framework Custom</PackageTags>
     <PackageId />
-    <Version>1.1.2</Version>
+    <Version>1.1.3</Version>
     <RepositoryUrl>https://github.com/dedpichto/ag.WPF.NumericBox</RepositoryUrl>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <PackageReleaseNotes></PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
