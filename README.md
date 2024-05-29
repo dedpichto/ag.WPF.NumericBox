@@ -41,7 +41,8 @@ UseGroupSeparator | bool | Gets or sets the value that indicates whether group s
 Value | decimal? | Gets or sets the value of NumericBox | null
 TextAlignment | TextAlignment | Gets or sets the text alignment of NumericBox | Left
 ShowTrailingZeros | bool | Gets or sets the value that indicates whether trailing zeros in decimal part of NumericBox should be shown | True
-TruncateFractionalPart | bool | Gets or sets the property specified whether fractional part of decimal value will be truncated (True) accordingly to DecimalPlaces or rounded (False) | False
+TruncateFractionalPart | bool | Gets or sets the property specified whether fractional part of decimal value will be truncated (True) accordingly to DecimalPlaces or rounded (False) | True
+Text (read only) | string | Gets the string representation of Value property | 
 
 ## Events
 

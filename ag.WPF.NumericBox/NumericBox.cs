@@ -88,13 +88,26 @@ namespace ag.WPF.NumericBox
         /// The identifier of the <see cref="TruncateFractionalPart"/> dependency property.
         /// </summary>
         public static readonly DependencyProperty TruncateFractionalPartProperty = DependencyProperty.Register(nameof(TruncateFractionalPart), typeof(bool), typeof(NumericBox),
-                new FrameworkPropertyMetadata(false, OnTruncateFractionalPartChanged));
+                new FrameworkPropertyMetadata(true, OnTruncateFractionalPartChanged));
+        /// <summary>
+        /// The identifier of the <see cref="Text"/> dependency property.
+        /// </summary>
+        public static readonly DependencyProperty TextProperty = DependencyProperty.Register(nameof(Text), typeof(string), typeof(NumericBox),
+                new FrameworkPropertyMetadata(""));
 
         #endregion
 
         #region Public properties
         /// <summary>
-        /// Gets or sets the property specified whether fractional part of decimal value will be truncated (True) accordingly to <see cref="DecimalPlaces"/> or rounded (False)
+        /// Gets the string representation of <see cref="Value"/> property.
+        /// </summary>
+        public string Text
+        {
+            get => (string)GetValue(TextProperty);
+            private set => SetValue(TextProperty, value);
+        }
+        /// <summary>
+        /// Gets or sets the property specified whether fractional part of decimal value will be truncated (True) accordingly to <see cref="DecimalPlaces"/> or rounded (False).
         /// </summary>
         public bool TruncateFractionalPart
         {
@@ -460,6 +473,7 @@ namespace ag.WPF.NumericBox
                 _textBox.TextChanged -= textBox_TextChanged;
                 _textBox.PreviewMouseLeftButtonDown -= textBox_PreviewMouseLeftButtonDown;
                 _textBox.CommandBindings.Clear();
+                BindingOperations.ClearBinding(this,TextProperty);
             }
             _textBox = GetTemplateChild(_elementText) as TextBox;
             if (_textBox != null)
@@ -472,11 +486,9 @@ namespace ag.WPF.NumericBox
                 _textBox.PreviewMouseLeftButtonDown += textBox_PreviewMouseLeftButtonDown;
                 _textBox.CommandBindings.Add(new CommandBinding(ApplicationCommands.Paste, pasteCommandBinding));
                 _textBox.CommandBindings.Add(new CommandBinding(ApplicationCommands.Cut, cutCommandBinding));
+                BindingOperations.SetBinding(this, TextProperty, new Binding("Text") { Source = _textBox, Mode = BindingMode.OneWay });
             }
         }
-
-
-
         #endregion
 
         #region Event handlers
