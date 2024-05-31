@@ -93,7 +93,7 @@ namespace ag.WPF.NumericBox
         /// The identifier of the <see cref="Text"/> dependency property.
         /// </summary>
         public static readonly DependencyProperty TextProperty = DependencyProperty.Register(nameof(Text), typeof(string), typeof(NumericBox),
-                new FrameworkPropertyMetadata(""));
+                new FrameworkPropertyMetadata("", OnTextChanged));
 
         #endregion
 
@@ -104,7 +104,14 @@ namespace ag.WPF.NumericBox
         public string Text
         {
             get => (string)GetValue(TextProperty);
-            private set => SetValue(TextProperty, value);
+            set
+            {
+                if (!decimal.TryParse(value, out _))
+                {
+                    throw new ArgumentException("The value should be numeric");
+                }
+                SetValue(TextProperty, value);
+            }
         }
         /// <summary>
         /// Gets or sets the property specified whether fractional part of decimal value will be truncated (True) accordingly to <see cref="DecimalPlaces"/> or rounded (False).
@@ -316,6 +323,26 @@ namespace ag.WPF.NumericBox
         }
 
         /// <summary>
+        /// Invoked just before the <see cref="TextChanged"/> event is raised on NumericBox
+        /// </summary>
+        /// <param name="oldValue">Old value</param>
+        /// <param name="newValue">New value</param>
+        private void OnTextChanged(string oldValue, string newValue)
+        {
+            var e = new RoutedPropertyChangedEventArgs<string>(oldValue, newValue)
+            {
+                RoutedEvent = TextChangedEvent
+            };
+            RaiseEvent(e);
+        }
+        private static void OnTextChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
+        {
+            if (sender is not NumericBox box) return;
+            box._textBox.Text = (string)e.NewValue;
+            box.OnTextChanged((string)e.OldValue, (string)e.NewValue);
+        }
+
+        /// <summary>
         /// Invoked just before the <see cref="TruncateFractionalPartChanged"/> event is raised on NumericBox
         /// </summary>
         /// <param name="oldValue">Old value</param>
@@ -448,6 +475,20 @@ namespace ag.WPF.NumericBox
         public static readonly RoutedEvent TruncateFractionalPartChangedEvent = EventManager.RegisterRoutedEvent("TruncateFractionalPartChanged",
             RoutingStrategy.Bubble, typeof(RoutedPropertyChangedEventHandler<bool>), typeof(NumericBox));
 
+        /// <summary>
+        /// Occurs when the <see cref="Text"/> property has been changed in some way.
+        /// </summary>
+        public event RoutedPropertyChangedEventHandler<string> TextChanged
+        {
+            add => AddHandler(TextChangedEvent, value);
+            remove => RemoveHandler(TextChangedEvent, value);
+        }
+        /// <summary>
+        /// Identifies the <see cref="TextChanged"/> routed event.
+        /// </summary>
+        public static readonly RoutedEvent TextChangedEvent = EventManager.RegisterRoutedEvent("TextChanged",
+            RoutingStrategy.Bubble, typeof(RoutedPropertyChangedEventHandler<string>), typeof(NumericBox));
+
         #endregion
 
         #region ctor
@@ -473,7 +514,7 @@ namespace ag.WPF.NumericBox
                 _textBox.TextChanged -= textBox_TextChanged;
                 _textBox.PreviewMouseLeftButtonDown -= textBox_PreviewMouseLeftButtonDown;
                 _textBox.CommandBindings.Clear();
-                BindingOperations.ClearBinding(this,TextProperty);
+                BindingOperations.ClearBinding(this, TextProperty);
             }
             _textBox = GetTemplateChild(_elementText) as TextBox;
             if (_textBox != null)
