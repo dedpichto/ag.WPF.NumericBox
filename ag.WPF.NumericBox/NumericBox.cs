@@ -546,10 +546,10 @@ namespace ag.WPF.NumericBox
             {
                 Value = null;
             }
-            //else if (_textBox.Text.EndsWith(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator) && !ShowTrailingZeros)
-            //{
-            //    _textBox.Text = _textBox.Text.Substring(0, _textBox.Text.Length - 1);
-            //}
+            else if (_textBox.Text.EndsWith(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator) && !ShowTrailingZeros)
+            {
+                _textBox.Text = _textBox.Text.Substring(0, _textBox.Text.Length - 1);
+            }
         }
 
         private void textBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -980,24 +980,6 @@ namespace ag.WPF.NumericBox
                 if ((decimalValue < 0 && partInt == 0) || addMinus)
                     result = $"{CultureInfo.CurrentCulture.NumberFormat.NegativeSign}{result}";
                 result = result.TrimEnd(culture.NumberFormat.NumberDecimalSeparator[0]);
-                //if (partFraction == 0)
-                //{
-                //    result = stringInt;
-                //}
-                //else
-                //{
-                //    var wholeFraction = partFraction / (decimal)Math.Pow(10, fractionCount);
-                //    var wholeNumber = partInt >= 0 ? partInt + wholeFraction : partInt - wholeFraction;
-                //    var format = $"{formatInt}{culture.NumberFormat.NumberDecimalSeparator}{formatFraction}";
-
-                //    result = wholeNumber.ToString(format);
-                //    if (!showTrailing && result.EndsWith("0"))
-                //    {
-                //        result = result.Trim('0');
-                //    }
-                //    if ((decimalValue < 0 && partInt == 0) || addMinus)
-                //        result = $"{CultureInfo.CurrentCulture.NumberFormat.NegativeSign}{result}";
-                //}
             }
             return result;
         }
@@ -1030,6 +1012,11 @@ namespace ag.WPF.NumericBox
                     result = new object[] { -EPSILON };
                 }
                 else if (stringValue == $"{culture.NumberFormat.NegativeSign}0")
+                {
+                    _textValue = stringValue;
+                    result = new object[] { EPSILON };
+                }
+                else if (stringValue.EndsWith(culture.NumberFormat.NumberDecimalSeparator))
                 {
                     _textValue = stringValue;
                     result = new object[] { EPSILON };
