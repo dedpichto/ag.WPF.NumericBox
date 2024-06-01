@@ -108,7 +108,7 @@ namespace ag.WPF.NumericBox
             {
                 if (!decimal.TryParse(value, out _))
                 {
-                    throw new ArgumentException("The value should be numeric");
+                    throw new FormatException("Input string was not in a correct format.");
                 }
                 SetValue(TextProperty, value);
             }
