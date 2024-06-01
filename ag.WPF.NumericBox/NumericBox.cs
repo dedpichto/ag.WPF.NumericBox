@@ -554,6 +554,7 @@ namespace ag.WPF.NumericBox
 
         private void textBox_TextChanged(object sender, TextChangedEventArgs e)
         {
+            Text = _textBox.Text;
             if (!ShowTrailingZeros)
             {
                 if (_gotFocus)
