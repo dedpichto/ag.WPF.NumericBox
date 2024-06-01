@@ -3,7 +3,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="clr-namespace:ag.WPF.NumericBox">
 
-    <local:NumericBoxTextToValueConverter x:Key="NumericBoxTextToValueConverter"/>
+    <local:NumericBoxTextToValueConverter x:Key="NumericBoxTextToValueConverter" x:Shared="false"/>
     <local:NumericBoxForegroundConverter x:Key="NumericBoxForegroundConverter"/>
 
     <SolidColorBrush x:Key="UpDownBackgroundBrush" Color="{DynamicResource {x:Static SystemColors.WindowColorKey}}"/>
