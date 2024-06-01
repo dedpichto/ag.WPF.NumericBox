@@ -106,7 +106,7 @@ namespace ag.WPF.NumericBox
             get => (string)GetValue(TextProperty);
             set
             {
-                if (!decimal.TryParse(value, out _))
+                if (!string.IsNullOrEmpty(value) && !decimal.TryParse(value, out _))
                 {
                     throw new FormatException("Input string was not in a correct format.");
                 }
