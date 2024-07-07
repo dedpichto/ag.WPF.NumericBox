@@ -1064,8 +1064,8 @@ namespace ag.WPF.NumericBox
                 }
                 if ((decimalValue < 0 && partInt == 0) || addMinus)
                     result = $"{CultureInfo.CurrentCulture.NumberFormat.NegativeSign}{result}";
-                result = result.TrimEnd(decimalSeparator[0]);
             }
+            result = result.TrimEnd(decimalSeparator[0]);
             return result;
         }
 
