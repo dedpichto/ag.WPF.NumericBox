@@ -106,7 +106,7 @@ namespace ag.WPF.NumericBox
             get => (string)GetValue(TextProperty);
             set
             {
-                if (!string.IsNullOrEmpty(value) && !decimal.TryParse(value, out _) && !value.In(CultureInfo.CurrentCulture.NumberFormat.NegativeSign, CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator))
+                if (!string.IsNullOrEmpty(value) && !decimal.TryParse(value, out _) && !value.In(CultureInfo.CurrentCulture.NumberFormat.NegativeSign, CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator,$"{CultureInfo.CurrentCulture.NumberFormat.NegativeSign}{CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator}"))
                 {
                     throw new FormatException("Input string was not in a correct format.");
                 }
@@ -932,7 +932,6 @@ namespace ag.WPF.NumericBox
     /// </summary>
     public class NumericBoxTextToValueConverter : IMultiValueConverter
     {
-        private const decimal EPSILON = 0.0000000000000000000000000001m;
         private string _textValue;
 
         private string getRealFractionString(decimal value, CultureInfo culture)
@@ -982,7 +981,7 @@ namespace ag.WPF.NumericBox
 
             var decimalSeparator = culture.NumberFormat.NumberDecimalSeparator;
 
-            if (decimalValue == EPSILON)
+            if (decimalValue == Constants.EPSILON)
             {
                 var text = _textValue;
                 if (!showTrailing)
@@ -1007,8 +1006,8 @@ namespace ag.WPF.NumericBox
                     }
                 }
             }
-            else if (decimalValue == -EPSILON)
-                return null;
+            else if (decimalValue == -Constants.EPSILON)
+                return _textValue;
 
             var partInt = decimal.Truncate(decimalValue);
             var fractionCount = truncate ? decimalPlaces : BitConverter.GetBytes(decimal.GetBits(decimalValue)[3])[2];
@@ -1023,7 +1022,7 @@ namespace ag.WPF.NumericBox
             if (truncate)
             {
                 var stringFraction = partFraction.ToString(formatFraction);
-                if (!showTrailing && decimalPlaces>0 && stringFraction.EndsWith("0"))
+                if (!showTrailing && decimalPlaces > 0 && stringFraction.EndsWith("0"))
                 {
                     var realDecimalString = getRealFractionString(decimalValue, culture);
                     if (realDecimalString == null || realDecimalString.Length >= decimalPlaces)
@@ -1090,28 +1089,30 @@ namespace ag.WPF.NumericBox
             {
                 if (stringValue == $"{culture.NumberFormat.NegativeSign}{culture.NumberFormat.NumberDecimalSeparator}")
                 {
-                    result = new object[] { -EPSILON };
+                    _textValue = stringValue;
+                    result = new object[] { -Constants.EPSILON };
                 }
                 else if (stringValue == culture.NumberFormat.NumberDecimalSeparator)
                 {
-                    result = new object[] { -EPSILON };
+                    _textValue = stringValue;
+                    result = new object[] { -Constants.EPSILON };
                 }
                 else if (stringValue == $"{culture.NumberFormat.NegativeSign}0")
                 {
                     _textValue = stringValue;
-                    result = new object[] { EPSILON };
+                    result = new object[] { -Constants.EPSILON };
                 }
                 else if (stringValue.EndsWith(culture.NumberFormat.NumberDecimalSeparator))
                 {
                     _textValue = stringValue;
-                    result = new object[] { EPSILON };
+                    result = new object[] { Constants.EPSILON };
                 }
                 else if (stringValue.StartsWith($"{culture.NumberFormat.NegativeSign}0{culture.NumberFormat.NumberDecimalSeparator}"))
                 {
                     if (stringValue == $"{culture.NumberFormat.NegativeSign}0{culture.NumberFormat.NumberDecimalSeparator}")
                     {
                         _textValue = stringValue;
-                        result = new object[] { EPSILON };
+                        result = new object[] { Constants.EPSILON };
                     }
                     else
                     {
@@ -1119,7 +1120,7 @@ namespace ag.WPF.NumericBox
                         if (arr.Length == 2 && arr[1].All(c => c == '0'))
                         {
                             _textValue = $"{culture.NumberFormat.NegativeSign}0{culture.NumberFormat.NumberDecimalSeparator}{arr[1]}";
-                            result = new object[] { EPSILON };
+                            result = new object[] { Constants.EPSILON };
                         }
                         else
                         {
@@ -1135,7 +1136,7 @@ namespace ag.WPF.NumericBox
             else
             {
                 _textValue = stringValue;
-                result = new object[] { EPSILON };
+                result = new object[] { Constants.EPSILON };
             }
             return result;
         }
