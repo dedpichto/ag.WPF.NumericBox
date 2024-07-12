@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -106,7 +107,7 @@ namespace ag.WPF.NumericBox
             get => (string)GetValue(TextProperty);
             set
             {
-                if (!string.IsNullOrEmpty(value) && !decimal.TryParse(value, out _) && !value.In(CultureInfo.CurrentCulture.NumberFormat.NegativeSign, CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator,$"{CultureInfo.CurrentCulture.NumberFormat.NegativeSign}{CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator}"))
+                if (!string.IsNullOrEmpty(value) && !decimal.TryParse(value, out _) && !value.In(CultureInfo.CurrentCulture.NumberFormat.NegativeSign, CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator, $"{CultureInfo.CurrentCulture.NumberFormat.NegativeSign}{CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator}"))
                 {
                     throw new FormatException("Input string was not in a correct format.");
                 }
@@ -836,6 +837,188 @@ namespace ag.WPF.NumericBox
                             : _textBox.Text.Length - (_textBox.CaretIndex + _textBox.SelectionLength) + 1;
         }
 
+        private string getRealFractionString(decimal value)
+        {
+            var culture = CultureInfo.CurrentCulture;
+
+            var arr = value.ToString().Split(culture.NumberFormat.NumberDecimalSeparator[0]);
+            if (arr.Length == 2)
+                return arr[1];
+            return null;
+        }
+
+        private decimal? getDecimalFromString(string stringValue)
+        {
+            if (double.TryParse(stringValue, out double doubleValue))
+            {
+                if (doubleValue <= (double)decimal.MaxValue && doubleValue >= (double)decimal.MinValue)
+                    return decimal.Parse(stringValue, NumberStyles.Any);
+                else if (doubleValue > (double)decimal.MaxValue)
+                    return decimal.MaxValue;
+                else
+                    return decimal.MinValue;
+            }
+            return null;
+        }
+
+        private enum SpecialCases
+        {
+            None,
+            Negative,
+            NegativeZero,
+            NegativeDot,
+            Dot,
+            EndDot
+        }
+        private SpecialCases _specialCases;
+
+        private string convertToString(decimal? decimalValue)
+        {
+            var culture = CultureInfo.CurrentCulture;
+            var decimalSeparator = culture.NumberFormat.NumberDecimalSeparator;
+
+            if (decimalValue == null)
+            {
+                if (_specialCases == SpecialCases.Negative)
+                {
+                    return culture.NumberFormat.NegativeSign;
+                }
+                else if (_specialCases == SpecialCases.NegativeZero)
+                {
+                    return $"{culture.NumberFormat.NegativeSign}0";
+                }
+                else if (_specialCases == SpecialCases.NegativeDot)
+                {
+                    return $"{culture.NumberFormat.NegativeSign}{decimalSeparator}";
+                }
+                else if (_specialCases == SpecialCases.Dot)
+                {
+                    return decimalSeparator;
+                }
+            }
+            var isFocused = _textBox != null && _textBox.IsFocused;
+
+            var partInt = decimal.Truncate(decimalValue.Value);
+            var fractionCount = TruncateFractionalPart ? DecimalPlaces : BitConverter.GetBytes(decimal.GetBits(decimalValue.Value)[3])[2];
+
+            var partFraction = Math.Abs(decimal.Truncate((decimalValue.Value - partInt) * (int)Math.Pow(10.0, fractionCount)));
+
+            var formatInt = UseGroupSeparator ? "#" + culture.NumberFormat.NumberGroupSeparator + "##0" : "##0";
+            var formatFraction = new string('0', (int)DecimalPlaces);
+            var stringInt = partInt.ToString(formatInt);
+
+
+            string result;
+            if (TruncateFractionalPart)
+            {
+                var stringFraction = partFraction.ToString(formatFraction);
+                if (!ShowTrailingZeros && DecimalPlaces > 0 && stringFraction.EndsWith("0"))
+                {
+                    var realDecimalString = getRealFractionString(decimalValue.Value);
+                    if (realDecimalString == null || realDecimalString.Length >= DecimalPlaces)
+                    {
+                        while (!stringFraction.EndsWith($"{decimalSeparator}0"))
+                        {
+                            stringFraction = stringFraction.Substring(0, stringFraction.Length - 1);
+                            if (!stringFraction.EndsWith("0"))
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        stringFraction = realDecimalString;
+                    }
+                }
+                if (decimalValue < 0 && partInt == 0)
+                    stringInt = $"{CultureInfo.CurrentCulture.NumberFormat.NegativeSign}{stringInt}";
+                result = DecimalPlaces > 0
+                    ? string.IsNullOrEmpty(stringFraction) && !isFocused ? stringInt : $"{stringInt}{decimalSeparator}{stringFraction}"
+                    : stringInt;
+            }
+            else
+            {
+                var wholeFraction = partFraction / (decimal)Math.Pow(10, fractionCount);
+                var wholeNumber = partInt >= 0 ? partInt + wholeFraction : partInt - wholeFraction;
+                var format = $"{formatInt}{decimalSeparator}{formatFraction}";
+
+                result = wholeNumber.ToString(format);
+                if (!ShowTrailingZeros && DecimalPlaces > 0 && result.EndsWith("0"))
+                {
+                    while (!result.EndsWith($"{decimalSeparator}0"))
+                    {
+                        result = result.Substring(0, result.Length - 1);
+                        if (!result.EndsWith("0"))
+                            break;
+                    }
+                }
+                if (decimalValue < 0 && partInt == 0)
+                    result = $"{CultureInfo.CurrentCulture.NumberFormat.NegativeSign}{result}";
+            }
+            result = result.TrimEnd(decimalSeparator[0]);
+
+            return result;
+        }
+
+        private decimal? convertToDecimal(string stringValue)
+        {
+            var culture = CultureInfo.CurrentCulture;
+            if (!string.IsNullOrEmpty(stringValue))
+                stringValue = stringValue.Replace(culture.NumberFormat.NumberGroupSeparator, "");
+            else
+                return null;
+
+            decimal? result = null;
+
+            if (stringValue == culture.NumberFormat.NegativeSign)
+            {
+                _specialCases = SpecialCases.Negative;
+                return null;
+            }
+            else if (stringValue == $"{culture.NumberFormat.NegativeSign}{culture.NumberFormat.NumberDecimalSeparator}")
+            {
+                _specialCases = SpecialCases.NegativeDot;
+                return null;
+            }
+            else if (stringValue == culture.NumberFormat.NumberDecimalSeparator)
+            {
+                _specialCases = SpecialCases.Dot;
+                return null;
+            }
+            else if (stringValue == $"{culture.NumberFormat.NegativeSign}0")
+            {
+                _specialCases = SpecialCases.NegativeZero;
+                return null;
+            }
+            else if (stringValue.EndsWith(culture.NumberFormat.NumberDecimalSeparator))
+            {
+                result = getDecimalFromString(stringValue.Substring(0, stringValue.Length - 1));
+            }
+            else if (stringValue.StartsWith($"{culture.NumberFormat.NegativeSign}0{culture.NumberFormat.NumberDecimalSeparator}"))
+            {
+                if (stringValue == $"{culture.NumberFormat.NegativeSign}0{culture.NumberFormat.NumberDecimalSeparator}")
+                {
+                    result = 0;
+                }
+                else
+                {
+                    var arr = stringValue.Split(culture.NumberFormat.NumberDecimalSeparator[0]);
+                    if (arr.Length == 2 && arr[1].All(c => c == '0'))
+                    {
+                        result = 0;
+                    }
+                    else
+                    {
+                        result = getDecimalFromString(stringValue);
+                    }
+                }
+            }
+            else
+            {
+                result = getDecimalFromString(stringValue);
+            }
+
+            return result;
+        }
         private void cutCommandBinding(object sender, ExecutedRoutedEventArgs e)
         {
             _position.Offset = 0;
