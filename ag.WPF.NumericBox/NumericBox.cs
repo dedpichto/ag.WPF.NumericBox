@@ -108,6 +108,10 @@ namespace ag.WPF.NumericBox
             get => (string)GetValue(TextProperty);
             set
             {
+                if (value != null && value.StartsWith(CultureInfo.CurrentCulture.NumberFormat.NumberGroupSeparator))
+                {
+                    value = value.Substring(1);
+                }
                 if (!string.IsNullOrEmpty(value) && !decimal.TryParse(value, out _) && !value.In(CultureInfo.CurrentCulture.NumberFormat.NegativeSign, CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator, $"{CultureInfo.CurrentCulture.NumberFormat.NegativeSign}{CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator}"))
                 {
                     throw new FormatException("Input string was not in a correct format.");
@@ -510,6 +514,7 @@ namespace ag.WPF.NumericBox
         public override void OnApplyTemplate()
         {
             base.OnApplyTemplate();
+            var v = Value;
             if (_textBox != null)
             {
                 _textBox.LostFocus -= textBox_LostFocus;
@@ -533,6 +538,7 @@ namespace ag.WPF.NumericBox
                 _textBox.CommandBindings.Add(new CommandBinding(ApplicationCommands.Paste, pasteCommandBinding));
                 _textBox.CommandBindings.Add(new CommandBinding(ApplicationCommands.Cut, cutCommandBinding));
                 BindingOperations.SetBinding(this, TextProperty, new Binding("Text") { Source = _textBox, Mode = BindingMode.OneWay });
+                Value = v;
             }
         }
         #endregion
@@ -592,7 +598,6 @@ namespace ag.WPF.NumericBox
 
         private void textBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
-            var step = 0;
             try
             {
                 var sepPos = _textBox.Text.IndexOf(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator);
@@ -610,33 +615,33 @@ namespace ag.WPF.NumericBox
                         return;
                     }
 
-                    if (ShowTrailingZeros)
-                    {
-                        if (_textBox.Text != CultureInfo.CurrentCulture.NumberFormat.NegativeSign)
-                        {
-                            _textBox.CaretIndex = _textBox.Text.IndexOf(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator) + 1;
-                            e.Handled = true;
-                        }
-                        else
-                        {
-                            _userInput = true;
-                            _position.Key = CurrentKey.Decimal;
-                        }
-                    }
-                    else
-                    {
-                        if (_textBox.Text.IndexOf(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator, StringComparison.Ordinal) == -1)
-                        {
-                            _userInput = true;
-                            _position.Key = CurrentKey.Decimal;
-                        }
-                        else
-                        {
-                            _textBox.CaretIndex = _textBox.Text.IndexOf(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator) + 1;
-                            e.Handled = true;
-                        }
-                    }
-                    return;
+                    //if (ShowTrailingZeros)
+                    //{
+                    //    if (_textBox.Text != CultureInfo.CurrentCulture.NumberFormat.NegativeSign)
+                    //    {
+                    //        _textBox.CaretIndex = _textBox.Text.IndexOf(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator) + 1;
+                    //        e.Handled = true;
+                    //    }
+                    //    else
+                    //    {
+                    //        _userInput = true;
+                    //        _position.Key = CurrentKey.Decimal;
+                    //    }
+                    //}
+                    //else
+                    //{
+                    //    if (_textBox.Text.IndexOf(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator, StringComparison.Ordinal) == -1)
+                    //    {
+                    //        _userInput = true;
+                    //        _position.Key = CurrentKey.Decimal;
+                    //    }
+                    //    else
+                    //    {
+                    //        _textBox.CaretIndex = _textBox.Text.IndexOf(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator) + 1;
+                    //        e.Handled = true;
+                    //    }
+                    //}
+                    //return;
                 }
                 else if (e.Text == CultureInfo.CurrentCulture.NumberFormat.NegativeSign)
                 {
@@ -657,26 +662,45 @@ namespace ag.WPF.NumericBox
                     return;
                 }
 
-                if (ShowTrailingZeros && e.Text.In("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")
-                    && _textBox.Text.Contains(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator)
-                    && _textBox.CaretIndex == _textBox.Text.Length)
-                {
-                    e.Handled = true;
-                    return;
-                }
-                else
+                //if (ShowTrailingZeros && e.Text.In("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")
+                //    && _textBox.Text.Contains(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator)
+                //    && _textBox.CaretIndex == _textBox.Text.Length)
+                //{
+                //    e.Handled = true;
+                //    return;
+                //}
+                //else
+                //{
+                //    _userInput = true;
+                //    _position.Key = CurrentKey.Number;
+                //    //_position.Offset = 1;
+                //    step = 1;
+                //}
+                if (e.Text.In("1", "2", "3", "4", "5", "6", "7", "8", "9"))
                 {
                     _userInput = true;
                     _position.Key = CurrentKey.Number;
-                    //_position.Offset = 1;
-                    step = 1;
+                }
+                else if (e.Text == "0")
+                {
+                    _userInput = true;
+                    _position.Key = CurrentKey.Number;
+                    if (DecimalPlaces > 0)
+                    {
+                        var parts = _textBox.Text.Split(new char[] { CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator[0] });
+                        if (parts.Length == 2 && parts[1].Length == DecimalPlaces)
+                        {
+                            e.Handled = true;
+                            return;
+                        }
+                    }
                 }
             }
             finally
             {
                 if (!e.Handled)
                 {
-                    setPositionOffset(step);
+                    setPositionOffset();
                 }
             }
         }
@@ -700,8 +724,10 @@ namespace ag.WPF.NumericBox
                     e.Handled = true;
                 return;
             }
-
+            var decimalSeparator = CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator;
             var thousandsSeparator = CultureInfo.CurrentCulture.NumberFormat.NumberGroupSeparator;
+            var isNegative = _textBox.Text.IndexOf(CultureInfo.CurrentCulture.NumberFormat.NegativeSign, StringComparison.Ordinal) >= 0;
+            var decimalIndex = _textBox.Text.IndexOf(decimalSeparator, StringComparison.Ordinal);
             switch (e.Key)
             {
                 case Key.Left:
@@ -710,9 +736,10 @@ namespace ag.WPF.NumericBox
                 case Key.End:
                     break;
                 case Key.Delete:
+                    _position.Key = CurrentKey.Delete;
+                    _userInput = true;
                     if ((_textBox.SelectionLength == _textBox.Text.Length) || (_textBox.CaretIndex == 0 && _textBox.Text.Length == 1))
                     {
-                        _userInput = true;
                         Value = null;
                         e.Handled = true;
                         break;
@@ -720,15 +747,11 @@ namespace ag.WPF.NumericBox
                     if (_textBox.Text[1] == thousandsSeparator[0])
                     {
                         _textBox.Text = _textBox.Text.Substring(2);
-                        _userInput = true;
                         e.Handled = true;
                         break;
                     }
                     if (DecimalPlaces > 0)
                     {
-                        var decimalSeparator = CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator;
-                        var isNegative = _textBox.Text.IndexOf(CultureInfo.CurrentCulture.NumberFormat.NegativeSign, StringComparison.Ordinal) >= 0;
-                        var decimalIndex = _textBox.Text.IndexOf(decimalSeparator, StringComparison.Ordinal);
                         if (_textBox.CaretIndex == decimalIndex || _textBox.CaretIndex == _textBox.Text.IndexOf(CultureInfo.CurrentCulture.NumberFormat.NumberGroupSeparator, StringComparison.Ordinal))
                         {
                             {
@@ -741,28 +764,24 @@ namespace ag.WPF.NumericBox
                         {
                             if (!isNegative && _textBox.CaretIndex == decimalIndex - 1 && _textBox.CaretIndex == 0)
                             {
-                                _userInput = true;
                                 Value = null;
                                 e.Handled = true;
                                 break;
                             }
                             else if (isNegative && _textBox.CaretIndex == decimalIndex - 1 && _textBox.CaretIndex == 1)
                             {
-                                _userInput = true;
                                 Value = null;
                                 e.Handled = true;
                                 break;
                             }
                             else if (!isNegative && _textBox.SelectionStart == 0 && _textBox.SelectionLength == decimalIndex)
                             {
-                                _userInput = true;
                                 Value = null;
                                 e.Handled = true;
                                 break;
                             }
                             else if (isNegative && ((_textBox.SelectionStart == 1 && _textBox.SelectionLength == decimalIndex - 1) || (_textBox.SelectionStart == 0 && _textBox.SelectionLength == decimalIndex)))
                             {
-                                _userInput = true;
                                 Value = null;
                                 e.Handled = true;
                                 break;
@@ -772,70 +791,132 @@ namespace ag.WPF.NumericBox
                     break;
                 case Key.Back:
                     _position.Key = CurrentKey.Back;
+                    _userInput = true;
+                    if (_textBox.CaretIndex > 0)
+                    {
+                        if (_textBox.Text.Length > 0 && _textBox.Text[_textBox.CaretIndex - 1] == thousandsSeparator[0])
+                        {
+                            _textBox.CaretIndex--;
+                            setPositionOffset();
+                            break;
+                        }
+                        if (_textBox.Text.Length > 0 && _textBox.Text[_textBox.CaretIndex - 1] == decimalSeparator[0])
+                        {
+                            if (isNegative)
+                            {
+                                if (_textBox.CaretIndex == 3 && _textBox.Text.Length == 3)
+                                {
+                                    Value = null;
+                                    e.Handled = true;
+                                    break;
+                                }
+                            }
+                            else
+                            {
+                                if (_textBox.CaretIndex == 2 && _textBox.Text.Length == 2)
+                                {
+                                    Value = null;
+                                    e.Handled = true;
+                                    break;
+                                }
+                            }
+                            _textBox.CaretIndex--;
+                            setPositionOffset();
+                            break;
+                        }
+                        else if (_textBox.Text.Length > _textBox.CaretIndex && _textBox.Text[_textBox.CaretIndex] == decimalSeparator[0])
+                        {
+                            if (isNegative)
+                            {
+                                if (_textBox.CaretIndex == 2 && _textBox.Text.Length == 3)
+                                {
+                                    Value = null;
+                                    e.Handled = true;
+                                    break;
+                                }
+                            }
+                            else
+                            {
+                                if (_textBox.CaretIndex == 1 && _textBox.Text.Length == 2)
+                                {
+                                    Value = null;
+                                    e.Handled = true;
+                                    break;
+                                }
+                            }
+                            //_textBox.CaretIndex--;
+                            //setPositionOffset();
+                            //break;
+                        }
+                    }
                     if ((_textBox.SelectionLength == _textBox.Text.Length) || (_textBox.CaretIndex == 1 && _textBox.Text.Length == 1))
                     {
-                        _userInput = true;
                         Value = null;
                         e.Handled = true;
                         break;
                     }
-                    if (DecimalPlaces > 0)
-                    {
-                        var decimalSeparator = CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator;
-                        var isNegative = _textBox.Text.IndexOf(CultureInfo.CurrentCulture.NumberFormat.NegativeSign, StringComparison.Ordinal) >= 0;
-                        var decimalIndex = _textBox.Text.IndexOf(decimalSeparator, StringComparison.Ordinal);
-                        if (_textBox.CaretIndex == decimalIndex + 1)
-                        {
-                            if (_textBox.CaretIndex > 0)
-                            {
-                                _textBox.CaretIndex--;
-                            }
-                            e.Handled = true;
-                            break;
-                        }
-                        else if (_textBox.Text.EndsWith(decimalSeparator))
-                        {
-                            if (!isNegative && _textBox.CaretIndex == decimalIndex && _textBox.CaretIndex == 1)
-                            {
-                                _userInput = true;
-                                Value = null;
-                                e.Handled = true;
-                                break;
-                            }
-                            else if (isNegative && _textBox.CaretIndex == decimalIndex && _textBox.CaretIndex == 2)
-                            {
-                                _userInput = true;
-                                Value = null;
-                                e.Handled = true;
-                                break;
-                            }
-                            else if (!isNegative && _textBox.SelectionStart == 0 && _textBox.SelectionLength == decimalIndex)
-                            {
-                                _userInput = true;
-                                Value = null;
-                                e.Handled = true;
-                                break;
-                            }
-                            else if (isNegative && ((_textBox.SelectionStart == 1 && _textBox.SelectionLength == decimalIndex - 1) || (_textBox.SelectionStart == 0 && _textBox.SelectionLength == decimalIndex)))
-                            {
-                                _userInput = true;
-                                Value = null;
-                                e.Handled = true;
-                                break;
-                            }
-                        }
-                    }
+                    //if (DecimalPlaces > 0)
+                    //{
+                    //    var decimalSeparator = CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator;
+                    //    var isNegative = _textBox.Text.IndexOf(CultureInfo.CurrentCulture.NumberFormat.NegativeSign, StringComparison.Ordinal) >= 0;
+                    //    var decimalIndex = _textBox.Text.IndexOf(decimalSeparator, StringComparison.Ordinal);
+                    //    if (_textBox.CaretIndex == decimalIndex + 1)
+                    //    {
+                    //        //if (_textBox.CaretIndex > 0)
+                    //        //{
+                    //        //    _textBox.CaretIndex--;
+                    //        //}
+                    //        //e.Handled = true;
+                    //        _textBox.CaretIndex--;
+                    //        break;
+                    //    }
+                    //    else if (_textBox.Text.EndsWith(decimalSeparator))
+                    //    {
+                    //        if (!isNegative && _textBox.CaretIndex == decimalIndex && _textBox.CaretIndex == 1)
+                    //        {
+                    //            _userInput = true;
+                    //            Value = null;
+                    //            e.Handled = true;
+                    //            break;
+                    //        }
+                    //        else if (isNegative && _textBox.CaretIndex == decimalIndex && _textBox.CaretIndex == 2)
+                    //        {
+                    //            _userInput = true;
+                    //            Value = null;
+                    //            e.Handled = true;
+                    //            break;
+                    //        }
+                    //        else if (!isNegative && _textBox.SelectionStart == 0 && _textBox.SelectionLength == decimalIndex)
+                    //        {
+                    //            _userInput = true;
+                    //            Value = null;
+                    //            e.Handled = true;
+                    //            break;
+                    //        }
+                    //        else if (isNegative && ((_textBox.SelectionStart == 1 && _textBox.SelectionLength == decimalIndex - 1) || (_textBox.SelectionStart == 0 && _textBox.SelectionLength == decimalIndex)))
+                    //        {
+                    //            _userInput = true;
+                    //            Value = null;
+                    //            e.Handled = true;
+                    //            break;
+                    //        }
+                    //    }
+                    //}
                     setPositionOffset();
                     break;
                 case Key.OemPeriod or Key.Decimal:
-                    if ((string.IsNullOrEmpty(_textBox.Text) || _textBox.SelectionLength == _textBox.Text.Length) && DecimalPlaces > 0)
+                    if (_textBox.Text.IndexOf(decimalSeparator) >= 0)
+                    {
+                        e.Handled = true;
+                    }
+                    else if ((string.IsNullOrEmpty(_textBox.Text) || _textBox.SelectionLength == _textBox.Text.Length) && DecimalPlaces > 0)
+                    {
+                        e.Handled = true;
+                    }
+                    else
                     {
                         _userInput = true;
-                        Value = 0.0m;
-                        e.Handled = true;
-                        _position.Offset = 2;
                         _position.Key = CurrentKey.Decimal;
-                        break;
                     }
                     break;
             }
@@ -849,10 +930,10 @@ namespace ag.WPF.NumericBox
         #endregion
 
         #region Private procedures
-        private void setPositionOffset(int step = 0)
+        private void setPositionOffset()
         {
             //if (!ShowTrailingZeros) return;
-            if ((_textBox.Text == CultureInfo.CurrentCulture.NumberFormat.NegativeSign && _position.Key != CurrentKey.Decimal) || (_textBox.Text.Length == _textBox.SelectionLength && step == 0) || (Value == null && step == 0))
+            if ((_textBox.Text == CultureInfo.CurrentCulture.NumberFormat.NegativeSign && _position.Key != CurrentKey.Decimal) || (_textBox.Text.Length == _textBox.SelectionLength) || (Value == null))
             {
                 _position.Exclude = true;
             }
@@ -868,13 +949,13 @@ namespace ag.WPF.NumericBox
 
             var sepPos = _textBox.Text.IndexOf(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator);
 
-            if (_textBox.Text.Length == _textBox.SelectionLength && step == 0)
+            if (_textBox.Text.Length == _textBox.SelectionLength)
             {
                 _position.Offset = _textBox.Text.Length - 1;
             }
             else if (sepPos == -1)
             {
-                _position.Offset = _textBox.Text.Length - _textBox.CaretIndex - 1 - _textBox.SelectionLength;
+                _position.Offset = _textBox.Text.Length - (_textBox.CaretIndex + _textBox.SelectionLength);
                 //if (step != 0)
                 //    _position.Offset = step;
                 //else
@@ -884,39 +965,45 @@ namespace ag.WPF.NumericBox
             {
                 if (_textBox.CaretIndex <= sepPos)
                 {
-                    if (step != 0)
-                        _position.Offset = step;
-                    else
-                        _position.Offset = _textBox.Text.Length - (_textBox.CaretIndex + _textBox.SelectionLength);
+                    //if (step != 0)
+                    //    _position.Offset = step;
+                    //else
+                    _position.Offset = _textBox.Text.Length - (_textBox.CaretIndex + _textBox.SelectionLength);
                 }
                 else
                 {
                     if (_position.Key == CurrentKey.Number || _position.Key == CurrentKey.Back)
                     {
-                        if (step != 0)
-                            _position.Offset = step - 1;
-                        else
-                            _position.Offset = _textBox.Text.Length - (_textBox.CaretIndex + _textBox.SelectionLength);
+                        //if (step != 0)
+                        //    _position.Offset = step - 1;
+                        //else
+                        _position.Offset = _textBox.Text.Length - (_textBox.CaretIndex + _textBox.SelectionLength) - 1;
                     }
                     else
                     {
-                        if (step != 0)
-                            _position.Offset = step - 1;
-                        else
-                            _position.Offset = _textBox.Text.Length - (_textBox.CaretIndex + _textBox.SelectionLength);
+                        //if (step != 0)
+                        //    _position.Offset = step - 1;
+                        //else
+                        _position.Offset = _textBox.Text.Length - (_textBox.CaretIndex + _textBox.SelectionLength) + 1;
                     }
                 }
             }
         }
 
-        private string getRealFractionString(decimal value)
+        private string getRealFractionString(decimal value, CultureInfo culture)
         {
-            var culture = CultureInfo.CurrentCulture;
-
             var arr = value.ToString().Split(culture.NumberFormat.NumberDecimalSeparator[0]);
             if (arr.Length == 2)
                 return arr[1];
             return null;
+        }
+
+        private (string, string) getDecimalParts(decimal value, CultureInfo culture)
+        {
+            var arr = value.ToString().Split(culture.NumberFormat.NumberDecimalSeparator[0]);
+            if (arr.Length == 2)
+                return (arr[0], arr[1]);
+            return (arr[0], "");
         }
 
         private decimal? getDecimalFromString(string stringValue)
@@ -951,19 +1038,19 @@ namespace ag.WPF.NumericBox
 
             if (decimalValue == null)
             {
-                if (_specialCases == SpecialCases.Negative)
+                if (_specialCases == SpecialCases.Negative && _userInput)
                 {
                     return culture.NumberFormat.NegativeSign;
                 }
-                else if (_specialCases == SpecialCases.NegativeZero)
+                else if (_specialCases == SpecialCases.NegativeZero && _userInput)
                 {
                     return $"{culture.NumberFormat.NegativeSign}0";
                 }
-                else if (_specialCases == SpecialCases.NegativeDot)
+                else if (_specialCases == SpecialCases.NegativeDot && _userInput)
                 {
                     return $"{culture.NumberFormat.NegativeSign}{decimalSeparator}";
                 }
-                else if (_specialCases == SpecialCases.Dot)
+                else if (_specialCases == SpecialCases.Dot && _userInput)
                 {
                     return decimalSeparator;
                 }
@@ -974,72 +1061,118 @@ namespace ag.WPF.NumericBox
             }
             var isFocused = _textBox != null && _textBox.IsFocused;
 
-            var partInt = decimal.Truncate(decimalValue.Value);
-            var fractionCount = TruncateFractionalPart ? DecimalPlaces : BitConverter.GetBytes(decimal.GetBits(decimalValue.Value)[3])[2];
-
-            var partFraction = Math.Abs(decimal.Truncate((decimalValue.Value - partInt) * (int)Math.Pow(10.0, fractionCount)));
-
             var formatInt = UseGroupSeparator ? "#" + culture.NumberFormat.NumberGroupSeparator + "##0" : "##0";
             var formatFraction = new string('0', (int)DecimalPlaces);
-            var stringInt = partInt.ToString(formatInt);
 
+            var (intpPart, fracPart) = getDecimalParts(decimalValue.Value, culture);
+            if (_specialCases == SpecialCases.EndDot && _userInput)
+            {
+                intpPart = Convert.ToInt64(intpPart).ToString(formatInt);
+                return $"{intpPart}{decimalSeparator}";
+            }
+            //var partInt = decimal.Truncate(decimalValue.Value);
+            ////var fractionCount = TruncateFractionalPart ? DecimalPlaces : BitConverter.GetBytes(decimal.GetBits(decimalValue.Value)[3])[2];
+            //var fractionCount = BitConverter.GetBytes(decimal.GetBits(decimalValue.Value)[3])[2];
+
+            //var partFraction = Math.Abs(decimal.Truncate((decimalValue.Value - partInt) * (int)Math.Pow(10.0, fractionCount)));
+
+            //var formatFractionFull = new string('0', (int)DecimalPlaces);
+            //var stringInt = partInt.ToString(formatInt);
+            //var realDecimalString = getRealFractionString(decimalValue.Value,culture);
 
             string result;
             if (TruncateFractionalPart)
             {
-                var stringFraction = partFraction.ToString(formatFraction);
-                if (!ShowTrailingZeros && DecimalPlaces > 0 && stringFraction.EndsWith("0"))
+                if (DecimalPlaces > 0)
                 {
-                    var realDecimalString = getRealFractionString(decimalValue.Value);
-                    if (realDecimalString == null || realDecimalString.Length >= DecimalPlaces)
-                    {
-                        while (!stringFraction.EndsWith($"{decimalSeparator}0"))
-                        {
-                            stringFraction = stringFraction.Substring(0, stringFraction.Length - 1);
-                            if (!stringFraction.EndsWith("0"))
-                                break;
-                        }
-                    }
-                    else
-                    {
-                        stringFraction = realDecimalString;
-                    }
+                    if (fracPart.Length > DecimalPlaces)
+                        fracPart = fracPart.Substring(0, (int)DecimalPlaces);
+                    intpPart = Convert.ToInt64(intpPart).ToString(formatInt);
+                    result = $"{intpPart}{decimalSeparator}{fracPart}";
                 }
-                if (decimalValue < 0 && partInt == 0)
-                    stringInt = $"{CultureInfo.CurrentCulture.NumberFormat.NegativeSign}{stringInt}";
-                result = DecimalPlaces > 0
-                    ? string.IsNullOrEmpty(stringFraction) && !isFocused ? stringInt : $"{stringInt}{decimalSeparator}{stringFraction}"
-                    : stringInt;
+                else
+                {
+                    result = Convert.ToInt64(intpPart).ToString(formatInt);
+                }
+                //var stringFraction = partFraction.ToString(formatFraction);
+                //if (realDecimalString == "0")
+                //{
+                //    stringFraction = "0";
+                //}
+                //else
+                //{
+                //    var stringFractionFull = partFraction.ToString(formatFractionFull);
+                //    var diff = stringFractionFull.Length - stringFraction.Length;
+                //    if (diff > 0 && partFraction != 0)
+                //    {
+                //        stringFraction = $"{new string('0', diff)}{stringFraction}";
+                //    }
+                //    if (stringFraction.Length > DecimalPlaces)
+                //    {
+                //        stringFraction = stringFraction.Substring(0, (int)DecimalPlaces);
+                //    }
+                //}
+
+                //if (!ShowTrailingZeros && DecimalPlaces > 0 && stringFraction.EndsWith("0"))
+                //{
+
+                //    if (realDecimalString == null || realDecimalString.Length >= DecimalPlaces)
+                //    {
+                //        while (!stringFraction.EndsWith($"{decimalSeparator}0"))
+                //        {
+                //            stringFraction = stringFraction.Substring(0, stringFraction.Length - 1);
+                //            if (!stringFraction.EndsWith("0"))
+                //                break;
+                //        }
+                //    }
+                //    else
+                //    {
+                //        stringFraction = realDecimalString;
+                //    }
+                //}
+                //if (decimalValue < 0 && partInt == 0)
+                //    stringInt = $"{CultureInfo.CurrentCulture.NumberFormat.NegativeSign}{stringInt}";
+                //result = DecimalPlaces > 0
+                //    ? string.IsNullOrEmpty(stringFraction) && !isFocused ? stringInt : $"{stringInt}{decimalSeparator}{stringFraction}"
+                //    : stringInt;
             }
             else
             {
-                var wholeFraction = partFraction / (decimal)Math.Pow(10, fractionCount);
-                var wholeNumber = partInt >= 0 ? partInt + wholeFraction : partInt - wholeFraction;
+                //var wholeFraction = partFraction / (decimal)Math.Pow(10, fractionCount);
+                //var wholeNumber = partInt >= 0 ? partInt + wholeFraction : partInt - wholeFraction;
                 var format = $"{formatInt}{decimalSeparator}{formatFraction}";
 
-                result = wholeNumber.ToString(format);
-                if (!ShowTrailingZeros && DecimalPlaces > 0 && result.EndsWith("0"))
-                {
-                    while (!result.EndsWith($"{decimalSeparator}0"))
-                    {
-                        result = result.Substring(0, result.Length - 1);
-                        if (!result.EndsWith("0"))
-                            break;
-                    }
-                }
-                if (decimalValue < 0 && partInt == 0)
-                    result = $"{CultureInfo.CurrentCulture.NumberFormat.NegativeSign}{result}";
+                result = decimalValue.Value.ToString(format);
+                //if (!ShowTrailingZeros && DecimalPlaces > 0 && result.EndsWith("0"))
+                //{
+                //    while (!result.EndsWith($"{decimalSeparator}0"))
+                //    {
+                //        result = result.Substring(0, result.Length - 1);
+                //        if (!result.EndsWith("0"))
+                //            break;
+                //    }
+                //}
+                //if (decimalValue < 0 && partInt == 0)
+                //    result = $"{CultureInfo.CurrentCulture.NumberFormat.NegativeSign}{result}";
             }
-            //if (!_userInput)
-            //{
+            if (!_userInput)
+            {
                 result = result.TrimEnd(decimalSeparator[0]);
-            //}
+            }
+            else
+            {
+                if (_specialCases != SpecialCases.EndDot)
+                {
+                    result = result.TrimEnd(decimalSeparator[0]);
+                }
+            }
             _userInput = false;
             return result;
         }
 
         private decimal? convertToDecimal(string stringValue)
         {
+            _specialCases = SpecialCases.None;
             var culture = CultureInfo.CurrentCulture;
             if (!string.IsNullOrEmpty(stringValue))
                 stringValue = stringValue.Replace(culture.NumberFormat.NumberGroupSeparator, "");
@@ -1070,6 +1203,7 @@ namespace ag.WPF.NumericBox
             }
             else if (stringValue.EndsWith(culture.NumberFormat.NumberDecimalSeparator))
             {
+                _specialCases = SpecialCases.EndDot;
                 result = getDecimalFromString(stringValue.Substring(0, stringValue.Length - 1));
             }
             else if (stringValue.StartsWith($"{culture.NumberFormat.NegativeSign}0{culture.NumberFormat.NumberDecimalSeparator}"))
