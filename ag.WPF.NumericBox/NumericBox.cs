@@ -587,7 +587,7 @@ namespace ag.WPF.NumericBox
 
             if (_position.Exclude)
                 return;
-            if (_position.Key.In(CurrentKey.Number, CurrentKey.Back, CurrentKey.Decimal))
+            if (_position.Key.In(CurrentKey.Number, CurrentKey.Back, CurrentKey.Decimal, CurrentKey.Delete))
             {
                 if (_textBox.Text.Length >= _position.Offset)
                 {
@@ -738,25 +738,49 @@ namespace ag.WPF.NumericBox
                 case Key.Delete:
                     _position.Key = CurrentKey.Delete;
                     _userInput = true;
-                    if ((_textBox.SelectionLength == _textBox.Text.Length) || (_textBox.CaretIndex == 0 && _textBox.Text.Length == 1))
+                    if (_textBox.CaretIndex == 0 && _textBox.Text.Length == 1)
                     {
                         Value = null;
                         e.Handled = true;
                         break;
                     }
-                    if (_textBox.Text[1] == thousandsSeparator[0])
+                    else if (_textBox.CaretIndex == 1 && isNegative && _textBox.Text.Length == 2)
                     {
-                        _textBox.Text = _textBox.Text.Substring(2);
+                        Value = null;
                         e.Handled = true;
                         break;
                     }
-                    if (DecimalPlaces > 0)
+                    else if (_textBox.CaretIndex.In(0, 1) && _textBox.Text[0] == decimalSeparator[0] && _textBox.Text.Length == 2)
                     {
-                        if (_textBox.CaretIndex == decimalIndex || _textBox.CaretIndex == _textBox.Text.IndexOf(CultureInfo.CurrentCulture.NumberFormat.NumberGroupSeparator, StringComparison.Ordinal))
+                        Value = null;
+                        e.Handled = true;
+                        break;
+                    }
+                    else if (_textBox.SelectionLength == _textBox.Text.Length)
+                    {
+                        Value = null;
+                        e.Handled = true;
+                        break;
+                    }
+                    else if (_textBox.CaretIndex < _textBox.Text.Length && _textBox.Text[_textBox.CaretIndex] == thousandsSeparator[0] && _textBox.SelectionLength == 0)
+                    {
+                        _textBox.CaretIndex++;
+                        setPositionOffset();
+                        break;
+                    }
+                    //if (_textBox.Text[1] == thousandsSeparator[0])
+                    //{
+                    //    _textBox.Text = _textBox.Text.Substring(2);
+                    //    e.Handled = true;
+                    //    break;
+                    //}
+                    if (decimalIndex > 0)
+                    {
+                        if (_textBox.CaretIndex == decimalIndex)
                         {
                             {
                                 _textBox.CaretIndex++;
-                                e.Handled = true;
+                                setPositionOffset();
                                 break;
                             }
                         }
@@ -788,19 +812,26 @@ namespace ag.WPF.NumericBox
                             }
                         }
                     }
+                    setPositionOffset();
                     break;
                 case Key.Back:
                     _position.Key = CurrentKey.Back;
                     _userInput = true;
                     if (_textBox.CaretIndex > 0)
                     {
-                        if (_textBox.Text.Length > 0 && _textBox.Text[_textBox.CaretIndex - 1] == thousandsSeparator[0] && _textBox.SelectionLength == 1)
+                        if (isNegative && _textBox.CaretIndex == 2 && _textBox.Text.Length == 2)
+                        {
+                            Value = null;
+                            e.Handled = true;
+                            break;
+                        }
+                        else if (_textBox.Text.Length > 0 && _textBox.Text[_textBox.CaretIndex - 1] == thousandsSeparator[0] && _textBox.SelectionLength == 0)
                         {
                             _textBox.CaretIndex--;
                             setPositionOffset();
                             break;
                         }
-                        if (_textBox.Text.Length > 0 && _textBox.Text[_textBox.CaretIndex - 1] == decimalSeparator[0] && _textBox.SelectionLength == 1)
+                        else if (_textBox.Text.Length > 0 && _textBox.Text[_textBox.CaretIndex - 1] == decimalSeparator[0] && _textBox.SelectionLength == 0)
                         {
                             if (isNegative)
                             {
@@ -955,7 +986,14 @@ namespace ag.WPF.NumericBox
             }
             else if (sepPos == -1)
             {
-                _position.Offset = _textBox.Text.Length - (_textBox.CaretIndex + _textBox.SelectionLength);
+                if (_position.Key == CurrentKey.Delete)
+                {
+                    _position.Offset = _textBox.Text.Length - (_textBox.CaretIndex + _textBox.SelectionLength) - 1;
+                }
+                else
+                {
+                    _position.Offset = _textBox.Text.Length - (_textBox.CaretIndex + _textBox.SelectionLength);
+                }
                 //if (step != 0)
                 //    _position.Offset = step;
                 //else
@@ -1309,7 +1347,7 @@ namespace ag.WPF.NumericBox
         public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
         {
             if (values[1] is not Brush foregroundBrush || values[2] is not Brush negativeBrush) return null;
-            if(values[0] is not decimal decimalValue)
+            if (values[0] is not decimal decimalValue)
                 return foregroundBrush;
             return decimalValue >= 0 ? foregroundBrush : negativeBrush;
         }
