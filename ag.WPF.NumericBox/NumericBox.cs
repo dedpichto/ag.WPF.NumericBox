@@ -1308,7 +1308,9 @@ namespace ag.WPF.NumericBox
         /// <returns>Brush depended on current value sign.</returns>
         public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
         {
-            if (values[0] is not decimal decimalValue || values[1] is not Brush foregroundBrush || values[2] is not Brush negativeBrush) return null;
+            if (values[1] is not Brush foregroundBrush || values[2] is not Brush negativeBrush) return null;
+            if(values[0] is not decimal decimalValue)
+                return foregroundBrush;
             return decimalValue >= 0 ? foregroundBrush : negativeBrush;
         }
 
