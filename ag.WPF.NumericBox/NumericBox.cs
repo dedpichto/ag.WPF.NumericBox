@@ -794,13 +794,13 @@ namespace ag.WPF.NumericBox
                     _userInput = true;
                     if (_textBox.CaretIndex > 0)
                     {
-                        if (_textBox.Text.Length > 0 && _textBox.Text[_textBox.CaretIndex - 1] == thousandsSeparator[0])
+                        if (_textBox.Text.Length > 0 && _textBox.Text[_textBox.CaretIndex - 1] == thousandsSeparator[0] && _textBox.SelectionLength == 1)
                         {
                             _textBox.CaretIndex--;
                             setPositionOffset();
                             break;
                         }
-                        if (_textBox.Text.Length > 0 && _textBox.Text[_textBox.CaretIndex - 1] == decimalSeparator[0])
+                        if (_textBox.Text.Length > 0 && _textBox.Text[_textBox.CaretIndex - 1] == decimalSeparator[0] && _textBox.SelectionLength == 1)
                         {
                             if (isNegative)
                             {
