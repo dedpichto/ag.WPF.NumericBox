@@ -36,6 +36,7 @@ namespace ag.WPF.NumericBox
             public CurrentKey Key;
             public int Offset;
             public bool Exclude;
+            public int Addition;
         }
 
         #region Constants
@@ -680,6 +681,7 @@ namespace ag.WPF.NumericBox
                 {
                     _userInput = true;
                     _position.Key = CurrentKey.Number;
+                    _position.Addition = 1;
                 }
                 else if (e.Text == "0")
                 {
@@ -711,6 +713,7 @@ namespace ag.WPF.NumericBox
             _position.Key = CurrentKey.None;
             _position.Offset = 0;
             _position.Exclude = false;
+            _position.Addition = 0;
 
             if ((Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift)
             {
@@ -730,6 +733,10 @@ namespace ag.WPF.NumericBox
             var decimalIndex = _textBox.Text.IndexOf(decimalSeparator, StringComparison.Ordinal);
             switch (e.Key)
             {
+                case Key.D0 or Key.D1 or Key.D2 or Key.D3 or Key.D4 or Key.D5 or Key.D6 or Key.D7 or Key.D8 or Key.D9
+                or Key.NumPad0 or Key.NumPad1 or Key.NumPad2 or Key.NumPad3 or Key.NumPad4 or Key.NumPad5 or Key.NumPad6 or Key.NumPad7 or Key.NumPad8 or Key.NumPad9:
+                    _position.Key = CurrentKey.Number;
+                    break;
                 case Key.Left:
                 case Key.Right:
                 case Key.Home:
@@ -936,14 +943,16 @@ namespace ag.WPF.NumericBox
                     setPositionOffset();
                     break;
                 case Key.OemPeriod or Key.Decimal:
-                    if (_textBox.Text.IndexOf(decimalSeparator) >= 0)
+                    if (decimalIndex >= 0 && _textBox.SelectionLength != _textBox.Text.Length)
                     {
+                        _textBox.CaretIndex = decimalIndex + 1;
+                        _position.Key = CurrentKey.Decimal;
                         e.Handled = true;
                     }
-                    else if ((string.IsNullOrEmpty(_textBox.Text) || _textBox.SelectionLength == _textBox.Text.Length) && DecimalPlaces > 0)
-                    {
-                        e.Handled = true;
-                    }
+                    //else if ((string.IsNullOrEmpty(_textBox.Text) || _textBox.SelectionLength == _textBox.Text.Length) && DecimalPlaces > 0)
+                    //{
+                    //    e.Handled = true;
+                    //}
                     else
                     {
                         _userInput = true;
@@ -964,9 +973,16 @@ namespace ag.WPF.NumericBox
         private void setPositionOffset()
         {
             //if (!ShowTrailingZeros) return;
-            if ((_textBox.Text == CultureInfo.CurrentCulture.NumberFormat.NegativeSign && _position.Key != CurrentKey.Decimal) || (_textBox.Text.Length == _textBox.SelectionLength) || (Value == null))
+            if ((_textBox.Text == CultureInfo.CurrentCulture.NumberFormat.NegativeSign && _position.Key != CurrentKey.Decimal) || (_textBox.Text.Length == _textBox.SelectionLength))
             {
                 _position.Exclude = true;
+                return;
+            }
+
+            if(Value==null && !_specialCases.In(SpecialCases.NegativeDot, SpecialCases.EndDot, SpecialCases.Dot))
+            {
+                _position.Exclude = true;
+                return;
             }
 
             if (_textBox.Text == CultureInfo.CurrentCulture.NumberFormat.NegativeSign && _position.Key == CurrentKey.Decimal)
@@ -1010,12 +1026,23 @@ namespace ag.WPF.NumericBox
                 }
                 else
                 {
-                    if (_position.Key == CurrentKey.Number || _position.Key == CurrentKey.Back)
+                    if (_position.Key == CurrentKey.Back)
                     {
                         //if (step != 0)
                         //    _position.Offset = step - 1;
                         //else
                         _position.Offset = _textBox.Text.Length - (_textBox.CaretIndex + _textBox.SelectionLength) - 1;
+                    }
+                    else if(_position.Key== CurrentKey.Number)
+                    {
+                        if(_textBox.CaretIndex==_textBox.Text.Length && _textBox.CaretIndex == sepPos + 1)
+                        {
+                            _position.Offset = _textBox.Text.Length - (_textBox.CaretIndex + _textBox.SelectionLength) + 1;
+                        }
+                        else
+                        {
+                            _position.Offset = _textBox.Text.Length - (_textBox.CaretIndex + _textBox.SelectionLength) - 1;
+                        }
                     }
                     else
                     {
@@ -1039,9 +1066,17 @@ namespace ag.WPF.NumericBox
         private (string, string) getDecimalParts(decimal value, CultureInfo culture)
         {
             var arr = value.ToString().Split(culture.NumberFormat.NumberDecimalSeparator[0]);
+            var stringInt = arr[0];
+            var stringFraction = "";
             if (arr.Length == 2)
-                return (arr[0], arr[1]);
-            return (arr[0], "");
+            {
+                stringFraction = arr[1];
+            }
+            if (stringFraction.Length < DecimalPlaces)
+            {
+                stringFraction = stringFraction.PadRight((int)DecimalPlaces - stringFraction.Length, '0');
+            }
+            return (stringInt, stringFraction);
         }
 
         private decimal? getDecimalFromString(string stringValue)
@@ -1275,6 +1310,7 @@ namespace ag.WPF.NumericBox
             _position.Offset = 0;
             _position.Exclude = false;
             _position.Key = CurrentKey.None;
+            _position.Addition = 0;
 
             if (IsReadOnly)
             {
@@ -1294,6 +1330,7 @@ namespace ag.WPF.NumericBox
             _position.Offset = 0;
             _position.Exclude = false;
             _position.Key = CurrentKey.None;
+            _position.Addition = 0;
 
             if (IsReadOnly)
             {
