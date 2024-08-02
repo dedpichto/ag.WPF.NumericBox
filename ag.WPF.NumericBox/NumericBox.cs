@@ -10,6 +10,7 @@ using System.Windows.Ink;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace ag.WPF.NumericBox
 {
@@ -547,7 +548,7 @@ namespace ag.WPF.NumericBox
                 _textBox.LostFocus -= textBox_LostFocus;
                 _textBox.GotFocus -= textBox_GotFocus;
                 _textBox.PreviewKeyDown -= textBox_PreviewKeyDown;
-                _textBox.PreviewTextInput -= textBox_PreviewTextInput;
+                //_textBox.PreviewTextInput -= textBox_PreviewTextInput;
                 _textBox.TextChanged -= textBox_TextChanged;
                 _textBox.PreviewMouseLeftButtonDown -= textBox_PreviewMouseLeftButtonDown;
                 _textBox.CommandBindings.Clear();
@@ -559,7 +560,7 @@ namespace ag.WPF.NumericBox
                 _textBox.LostFocus += textBox_LostFocus;
                 _textBox.GotFocus += textBox_GotFocus;
                 _textBox.PreviewKeyDown += textBox_PreviewKeyDown;
-                _textBox.PreviewTextInput += textBox_PreviewTextInput;
+                //_textBox.PreviewTextInput += textBox_PreviewTextInput;
                 _textBox.TextChanged += textBox_TextChanged;
                 _textBox.PreviewMouseLeftButtonDown += textBox_PreviewMouseLeftButtonDown;
                 _textBox.CommandBindings.Add(new CommandBinding(ApplicationCommands.Paste, pasteCommandBinding));
@@ -600,138 +601,138 @@ namespace ag.WPF.NumericBox
                     _textBox.SelectAll();
                     _gotFocus = false;
                 }
-                if (_position.Exclude)
-                    return;
-                if (_position.Key.In(CurrentKey.Number, CurrentKey.Back, CurrentKey.Decimal))
-                {
-                    if (_textBox.Text.Length >= _position.Offset)
-                    {
-                        _textBox.CaretIndex = _textBox.Text.Length - _position.Offset;
-                    }
-                }
-                return;
-            }
-
-            if (_position.Exclude)
-                return;
-            if (_position.Key.In(CurrentKey.Number, CurrentKey.Back, CurrentKey.Decimal, CurrentKey.Delete))
-            {
-                if (_textBox.Text.Length >= _position.Offset)
-                {
-                    _textBox.CaretIndex = _textBox.Text.Length - _position.Offset;
-                }
-            }
-        }
-
-        private void textBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
-        {
-            try
-            {
-                var sepPos = _textBox.Text.IndexOf(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator);
-                _gotFocus = false;
-                if (e.Text == CultureInfo.CurrentCulture.NumberFormat.NumberGroupSeparator)
-                {
-                    e.Handled = true;
-                    return;
-                }
-                else if (e.Text == CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator)
-                {
-                    if (DecimalPlaces == 0)
-                    {
-                        e.Handled = true;
-                        return;
-                    }
-
-                    //if (ShowTrailingZeros)
-                    //{
-                    //    if (_textBox.Text != CultureInfo.CurrentCulture.NumberFormat.NegativeSign)
-                    //    {
-                    //        _textBox.CaretIndex = _textBox.Text.IndexOf(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator) + 1;
-                    //        e.Handled = true;
-                    //    }
-                    //    else
-                    //    {
-                    //        _userInput = true;
-                    //        _position.Key = CurrentKey.Decimal;
-                    //    }
-                    //}
-                    //else
-                    //{
-                    //    if (_textBox.Text.IndexOf(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator, StringComparison.Ordinal) == -1)
-                    //    {
-                    //        _userInput = true;
-                    //        _position.Key = CurrentKey.Decimal;
-                    //    }
-                    //    else
-                    //    {
-                    //        _textBox.CaretIndex = _textBox.Text.IndexOf(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator) + 1;
-                    //        e.Handled = true;
-                    //    }
-                    //}
-                    //return;
-                }
-                else if (e.Text == CultureInfo.CurrentCulture.NumberFormat.NegativeSign)
-                {
-                    if (_textBox.SelectionLength == _textBox.Text.Length)
-                    {
-                        _userInput = true;
-                        return;
-                    }
-                    if (_textBox.CaretIndex > 0)
-                    {
-                        e.Handled = true;
-                        return;
-                    }
-                }
-                else if (!e.Text.In("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"))
-                {
-                    e.Handled = true;
-                    return;
-                }
-
-                //if (ShowTrailingZeros && e.Text.In("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")
-                //    && _textBox.Text.Contains(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator)
-                //    && _textBox.CaretIndex == _textBox.Text.Length)
-                //{
-                //    e.Handled = true;
+                //if (_position.Exclude)
                 //    return;
-                //}
-                //else
+                //if (_position.Key.In(CurrentKey.Number, CurrentKey.Back, CurrentKey.Decimal))
                 //{
-                //    _userInput = true;
-                //    _position.Key = CurrentKey.Number;
-                //    //_position.Offset = 1;
-                //    step = 1;
+                //    if (_textBox.Text.Length >= _position.Offset)
+                //    {
+                //        _textBox.CaretIndex = _textBox.Text.Length - _position.Offset;
+                //    }
                 //}
-                if (e.Text.In("1", "2", "3", "4", "5", "6", "7", "8", "9"))
-                {
-                    _userInput = true;
-                    _position.Key = CurrentKey.Number;
-                    _position.Addition = 1;
-                }
-                else if (e.Text == "0")
-                {
-                    _userInput = true;
-                    _position.Key = CurrentKey.Number;
-                    if (DecimalPlaces > 0)
-                    {
-                        var parts = _textBox.Text.Split(new char[] { CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator[0] });
-                        if (parts.Length == 2 && parts[1].Length == DecimalPlaces)
-                        {
-                            e.Handled = true;
-                            return;
-                        }
-                    }
-                }
+                //return;
             }
-            finally
-            {
-                if (!e.Handled)
-                {
-                    setPositionOffset();
-                }
-            }
+
+            //if (_position.Exclude)
+            //    return;
+            //if (_position.Key.In(CurrentKey.Number, CurrentKey.Back, CurrentKey.Decimal, CurrentKey.Delete))
+            //{
+            //    if (_textBox.Text.Length >= _position.Offset)
+            //    {
+            //        _textBox.CaretIndex = _textBox.Text.Length - _position.Offset;
+            //    }
+            //}
         }
+
+        //private void textBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        //{
+        //    try
+        //    {
+        //        var sepPos = _textBox.Text.IndexOf(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator);
+        //        _gotFocus = false;
+        //        if (e.Text == CultureInfo.CurrentCulture.NumberFormat.NumberGroupSeparator)
+        //        {
+        //            e.Handled = true;
+        //            return;
+        //        }
+        //        else if (e.Text == CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator)
+        //        {
+        //            if (DecimalPlaces == 0)
+        //            {
+        //                e.Handled = true;
+        //                return;
+        //            }
+
+        //            //if (ShowTrailingZeros)
+        //            //{
+        //            //    if (_textBox.Text != CultureInfo.CurrentCulture.NumberFormat.NegativeSign)
+        //            //    {
+        //            //        _textBox.CaretIndex = _textBox.Text.IndexOf(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator) + 1;
+        //            //        e.Handled = true;
+        //            //    }
+        //            //    else
+        //            //    {
+        //            //        _userInput = true;
+        //            //        _position.Key = CurrentKey.Decimal;
+        //            //    }
+        //            //}
+        //            //else
+        //            //{
+        //            //    if (_textBox.Text.IndexOf(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator, StringComparison.Ordinal) == -1)
+        //            //    {
+        //            //        _userInput = true;
+        //            //        _position.Key = CurrentKey.Decimal;
+        //            //    }
+        //            //    else
+        //            //    {
+        //            //        _textBox.CaretIndex = _textBox.Text.IndexOf(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator) + 1;
+        //            //        e.Handled = true;
+        //            //    }
+        //            //}
+        //            //return;
+        //        }
+        //        else if (e.Text == CultureInfo.CurrentCulture.NumberFormat.NegativeSign)
+        //        {
+        //            if (_textBox.SelectionLength == _textBox.Text.Length)
+        //            {
+        //                _userInput = true;
+        //                return;
+        //            }
+        //            if (_textBox.CaretIndex > 0)
+        //            {
+        //                e.Handled = true;
+        //                return;
+        //            }
+        //        }
+        //        else if (!e.Text.In("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"))
+        //        {
+        //            e.Handled = true;
+        //            return;
+        //        }
+
+        //        //if (ShowTrailingZeros && e.Text.In("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")
+        //        //    && _textBox.Text.Contains(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator)
+        //        //    && _textBox.CaretIndex == _textBox.Text.Length)
+        //        //{
+        //        //    e.Handled = true;
+        //        //    return;
+        //        //}
+        //        //else
+        //        //{
+        //        //    _userInput = true;
+        //        //    _position.Key = CurrentKey.Number;
+        //        //    //_position.Offset = 1;
+        //        //    step = 1;
+        //        //}
+        //        if (e.Text.In("1", "2", "3", "4", "5", "6", "7", "8", "9"))
+        //        {
+        //            _userInput = true;
+        //            _position.Key = CurrentKey.Number;
+        //            _position.Addition = 1;
+        //        }
+        //        else if (e.Text == "0")
+        //        {
+        //            _userInput = true;
+        //            _position.Key = CurrentKey.Number;
+        //            if (DecimalPlaces > 0)
+        //            {
+        //                var parts = _textBox.Text.Split(new char[] { CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator[0] });
+        //                if (parts.Length == 2 && parts[1].Length == DecimalPlaces)
+        //                {
+        //                    e.Handled = true;
+        //                    return;
+        //                }
+        //            }
+        //        }
+        //    }
+        //    finally
+        //    {
+        //        if (!e.Handled)
+        //        {
+        //            setPositionOffset();
+        //        }
+        //    }
+        //}
 
         private void textBox_PreviewKeyDown(object sender, KeyEventArgs e)
         {
@@ -816,6 +817,12 @@ namespace ag.WPF.NumericBox
                     }
                     if (_textBox.SelectionLength == 0)
                     {
+                        if (decimalIndex >= 0 && carIndex == decimalIndex)
+                        {
+                            _textBox.CaretIndex++;
+                            e.Handled = true;
+                            return;
+                        }
                         var before = text.Substring(0, carIndex);
                         if (text[carIndex] == groupSeparator[0])
                         {
@@ -844,117 +851,12 @@ namespace ag.WPF.NumericBox
                         e.Handled = true;
                         return;
                     }
-                    if (isNegative)
-                    {
-                        //negative single number like -2 with caret index before the end
-                        if (carIndex == 1 && text.Length == 2)
-                        {
-                            _textBox.Text = negativeSign;
-                            _textBox.CaretIndex = 1;
-                            e.Handled = true;
-                            return;
-                        }
-                        //negative number with caret index after first number and selected text before groups separator like -1,234 or -12,345
-                        if (text.StartsWith(negativeSign) && carIndex > 0 && carIndex < text.Length && text[_textBox.SelectionStart + _textBox.SelectionLength] == groupSeparator[0])
-                        {
-                            var bigSelection = false;
-                            var start = _textBox.SelectionStart;
-                            if (_textBox.SelectionLength > 0)
-                            {
-                                bigSelection = true;
-                                text = text.Remove(_textBox.SelectionStart, _textBox.SelectionLength + 1);
-                            }
-                            else
-                            {
-                                text = text.Remove(carIndex, 2);
-                            }
-                            _textBox.Text = text;
-                            if (bigSelection)
-                                _textBox.CaretIndex = start;
-                            else
-                                _textBox.CaretIndex = 1;
-                            e.Handled = true;
-                            return;
-                        }
-                    }
-
-                    if (carIndex == 0 && text.Length == 1)
-                    {
-                        Value = null;
-                        e.Handled = true;
-                        break;
-                    }
-                    else if (carIndex == 1 && isNegative && text.Length == 2)
-                    {
-                        Value = null;
-                        e.Handled = true;
-                        break;
-                    }
-                    else if (carIndex.In(0, 1) && text[0] == decimalSeparator[0] && text.Length == 2)
-                    {
-                        Value = null;
-                        e.Handled = true;
-                        break;
-                    }
-                    else if (_textBox.SelectionLength == text.Length)
-                    {
-                        Value = null;
-                        e.Handled = true;
-                        break;
-                    }
-                    else if (carIndex < text.Length && text[carIndex] == groupSeparator[0] && _textBox.SelectionLength == 0)
-                    {
-                        _textBox.CaretIndex++;
-                        setPositionOffset();
-                        break;
-                    }
-                    //if (text[1] == thousandsSeparator[0])
-                    //{
-                    //    _textBox.Text = text.Substring(2);
-                    //    e.Handled = true;
-                    //    break;
-                    //}
-                    if (decimalIndex > 0)
-                    {
-                        if (carIndex == decimalIndex)
-                        {
-                            {
-                                _textBox.CaretIndex++;
-                                setPositionOffset();
-                                break;
-                            }
-                        }
-                        else if (text.EndsWith(decimalSeparator))
-                        {
-                            if (!isNegative && carIndex == decimalIndex - 1 && carIndex == 0)
-                            {
-                                Value = null;
-                                e.Handled = true;
-                                break;
-                            }
-                            else if (isNegative && carIndex == decimalIndex - 1 && carIndex == 1)
-                            {
-                                Value = null;
-                                e.Handled = true;
-                                break;
-                            }
-                            else if (!isNegative && _textBox.SelectionStart == 0 && _textBox.SelectionLength == decimalIndex)
-                            {
-                                Value = null;
-                                e.Handled = true;
-                                break;
-                            }
-                            else if (isNegative && ((_textBox.SelectionStart == 1 && _textBox.SelectionLength == decimalIndex - 1) || (_textBox.SelectionStart == 0 && _textBox.SelectionLength == decimalIndex)))
-                            {
-                                Value = null;
-                                e.Handled = true;
-                                break;
-                            }
-                        }
-                    }
-                    setPositionOffset();
-                    break;
                 case Key.Back:
+                    if (carIndex == 0)
+                    {
+                        e.Handled = true;
+                        return;
+                    }
                     _position.Key = CurrentKey.Back;
                     _userInput = true;
                     //full selection
@@ -1010,72 +912,74 @@ namespace ag.WPF.NumericBox
                         e.Handled = true;
                         return;
                     }
-                    if (isNegative)
+                    if (_textBox.SelectionLength == 0)
                     {
-                        //negative single number like -2 with caret index at the end
-                        if (carIndex == 2 && text.Length == 2)
+                        var before = text.Substring(0, carIndex);
+                        if (text[carIndex] == groupSeparator[0])
                         {
-                            _textBox.Text = negativeSign;
-                            e.Handled = true;
-                            return;
-                        }
-                        //negative number with caret index after first number and selected text before groups separator like -1,234 or -12,345
-                        if (text.StartsWith(negativeSign) && carIndex > 0 && carIndex < text.Length && text[carIndex + _textBox.SelectionLength] == groupSeparator[0])
-                        {
-                            if (_textBox.SelectionLength > 0)
-                                text = text.Remove(_textBox.SelectionStart, _textBox.SelectionStart + _textBox.SelectionLength);
-                            else
-                                text = text.Remove(carIndex - 1, 2);
-                            _textBox.Text = text;
-                            _textBox.CaretIndex = 1;
-                            e.Handled = true;
-                            return;
-                        }
-                    }
-                    //caret index after group separator
-                    if (carIndex > 0 && text[carIndex - 1] == groupSeparator[0])
-                    {
-                        if (_textBox.SelectionLength == 0)
-                        {
-                            _textBox.CaretIndex--;
-                            _position.Offset = text.Length - carIndex + 1;
+                            _textBox.Text = text.Remove(carIndex - 1, 2);
                         }
                         else
                         {
-                            _textBox.Text = text.Remove(carIndex - 1, _textBox.SelectionLength + 1);
-                            _textBox.CaretIndex = carIndex - 1 + _textBox.Text.Count(c => c == groupSeparator[0]);
-                            e.Handled = true;
+                            _textBox.Text = text.Remove(carIndex - 1, 1);
                         }
+                        var after = _textBox.Text.Length >= before.Length ? _textBox.Text.Substring(0, before.Length) : _textBox.Text;
+                        var count1 = before.Count(c => c == groupSeparator[0]);
+                        var count2 = after.Count(c => c == groupSeparator[0]);
+                        _textBox.CaretIndex = carIndex + (count2 - count1) - 1;
+                        e.Handled = true;
                         return;
+
                     }
-                    //selected text
-                    if (_textBox.SelectionLength > 0)
-                    {
-                        //if (carIndex > 0)
-                        //{
-                        text = text.Remove(carIndex, _textBox.SelectionLength);
-                        _textBox.Text = text;
-                        _textBox.CaretIndex = carIndex + _textBox.Text.Count(c => c == groupSeparator[0]);
-                        e.Handled = true;
-                        //}
-                    }
-                    setPositionOffset();
-                    break;
-                case Key.OemPeriod or Key.Decimal:
-                    if (decimalIndex >= 0 && _textBox.SelectionLength != text.Length)
-                    {
-                        _textBox.CaretIndex = decimalIndex + 1;
-                        _position.Key = CurrentKey.Decimal;
-                        e.Handled = true;
-                    }
-                    //else if ((string.IsNullOrEmpty(_textBox.Text) || _textBox.SelectionLength == text.Length) && DecimalPlaces > 0)
-                    //{
-                    //    e.Handled = true;
-                    //}
                     else
                     {
-                        _userInput = true;
-                        _position.Key = CurrentKey.Decimal;
+                        var before = text.Substring(0, _textBox.SelectionStart);
+                        _textBox.Text = text.Remove(_textBox.SelectionStart, _textBox.SelectionLength);
+                        var after = _textBox.Text.Length >= before.Length ? _textBox.Text.Substring(0, before.Length) : _textBox.Text;
+                        var count1 = before.Count(c => c == groupSeparator[0]);
+                        var count2 = after.Count(c => c == groupSeparator[0]);
+                        _textBox.CaretIndex = carIndex + (count2 - count1);
+                        e.Handled = true;
+                        return;
+                    }
+                case Key.OemPeriod or Key.Decimal:
+                    if (decimalSeparator == ".")
+                    {
+                        if (decimalIndex >= 0 && _textBox.SelectionLength != text.Length)
+                        {
+                            _textBox.CaretIndex = decimalIndex + 1;
+                            _position.Key = CurrentKey.Decimal;
+                            e.Handled = true;
+                        }
+                        else
+                        {
+                            _userInput = true;
+                            _position.Key = CurrentKey.Decimal;
+                        }
+                    }
+                    else
+                    {
+                        e.Handled = true;
+                    }
+                    break;
+                case Key.OemComma:
+                    if (decimalSeparator == ",")
+                    {
+                        if (decimalIndex >= 0 && _textBox.SelectionLength != text.Length)
+                        {
+                            _textBox.CaretIndex = decimalIndex + 1;
+                            _position.Key = CurrentKey.Decimal;
+                            e.Handled = true;
+                        }
+                        else
+                        {
+                            _userInput = true;
+                            _position.Key = CurrentKey.Decimal;
+                        }
+                    }
+                    else
+                    {
+                        e.Handled = true;
                     }
                     break;
             }
@@ -1089,94 +993,94 @@ namespace ag.WPF.NumericBox
         #endregion
 
         #region Private procedures
-        private void setPositionOffset()
-        {
-            //if (!ShowTrailingZeros) return;
-            if ((_textBox.Text == CultureInfo.CurrentCulture.NumberFormat.NegativeSign && _position.Key != CurrentKey.Decimal) || (_textBox.Text.Length == _textBox.SelectionLength))
-            {
-                _position.Exclude = true;
-                return;
-            }
+        //private void setPositionOffset()
+        //{
+        //    //if (!ShowTrailingZeros) return;
+        //    if ((_textBox.Text == CultureInfo.CurrentCulture.NumberFormat.NegativeSign && _position.Key != CurrentKey.Decimal) || (_textBox.Text.Length == _textBox.SelectionLength))
+        //    {
+        //        _position.Exclude = true;
+        //        return;
+        //    }
 
-            if (Value == null && !_specialCases.In(SpecialCases.NegativeDot, SpecialCases.EndDot, SpecialCases.Dot))
-            {
-                _position.Exclude = true;
-                return;
-            }
+        //    if (Value == null && !_specialCases.In(SpecialCases.NegativeDot, SpecialCases.EndDot, SpecialCases.Dot))
+        //    {
+        //        _position.Exclude = true;
+        //        return;
+        //    }
 
-            if (_textBox.Text == CultureInfo.CurrentCulture.NumberFormat.NegativeSign && _position.Key == CurrentKey.Decimal)
-            {
-                if (DecimalPlaces > 0)
-                {
-                    _position.Offset = (int)DecimalPlaces;
-                    return;
-                }
-            }
+        //    if (_textBox.Text == CultureInfo.CurrentCulture.NumberFormat.NegativeSign && _position.Key == CurrentKey.Decimal)
+        //    {
+        //        if (DecimalPlaces > 0)
+        //        {
+        //            _position.Offset = (int)DecimalPlaces;
+        //            return;
+        //        }
+        //    }
 
-            var sepPos = _textBox.Text.IndexOf(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator);
+        //    var sepPos = _textBox.Text.IndexOf(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator);
 
-            if (_textBox.Text.Length == _textBox.SelectionLength)
-            {
-                _position.Offset = _textBox.Text.Length - 1;
-            }
-            else if (sepPos == -1)
-            {
-                if (_position.Key == CurrentKey.Delete)
-                {
-                    _position.Offset = _textBox.Text.Length - (_textBox.CaretIndex + _textBox.SelectionLength) - 1;
-                }
-                else
-                {
-                    _position.Offset = _textBox.Text.Length - (_textBox.CaretIndex + _textBox.SelectionLength);
-                }
-                //if (step != 0)
-                //    _position.Offset = step;
-                //else
-                //    _position.Offset = _textBox.Text.Length - (_textBox.CaretIndex + _textBox.SelectionLength);
-            }
-            else
-            {
-                if (_textBox.CaretIndex <= sepPos)
-                {
-                    //if (step != 0)
-                    //    _position.Offset = step;
-                    //else
-                    _position.Offset = _textBox.Text.Length - (_textBox.CaretIndex + _textBox.SelectionLength);
-                }
-                else
-                {
-                    if (_position.Key == CurrentKey.Back)
-                    {
-                        //if (step != 0)
-                        //    _position.Offset = step - 1;
-                        //else
-                        _position.Offset = _textBox.Text.Length - (_textBox.CaretIndex + _textBox.SelectionLength) - 1;
-                    }
-                    else if (_position.Key == CurrentKey.Number)
-                    {
-                        if (_textBox.CaretIndex == _textBox.Text.Length && _textBox.CaretIndex == sepPos + 1)
-                        {
-                            _position.Offset = _textBox.Text.Length - (_textBox.CaretIndex + _textBox.SelectionLength) + 1;
-                        }
-                        else if (_textBox.CaretIndex == sepPos + 1)
-                        {
-                            _position.Offset = _textBox.Text.Length - (_textBox.CaretIndex + _textBox.SelectionLength) + 1;
-                        }
-                        else
-                        {
-                            _position.Offset = _textBox.Text.Length - (_textBox.CaretIndex + _textBox.SelectionLength) - 1;
-                        }
-                    }
-                    else
-                    {
-                        //if (step != 0)
-                        //    _position.Offset = step - 1;
-                        //else
-                        _position.Offset = _textBox.Text.Length - (_textBox.CaretIndex + _textBox.SelectionLength) + 1;
-                    }
-                }
-            }
-        }
+        //    if (_textBox.Text.Length == _textBox.SelectionLength)
+        //    {
+        //        _position.Offset = _textBox.Text.Length - 1;
+        //    }
+        //    else if (sepPos == -1)
+        //    {
+        //        if (_position.Key == CurrentKey.Delete)
+        //        {
+        //            _position.Offset = _textBox.Text.Length - (_textBox.CaretIndex + _textBox.SelectionLength) - 1;
+        //        }
+        //        else
+        //        {
+        //            _position.Offset = _textBox.Text.Length - (_textBox.CaretIndex + _textBox.SelectionLength);
+        //        }
+        //        //if (step != 0)
+        //        //    _position.Offset = step;
+        //        //else
+        //        //    _position.Offset = _textBox.Text.Length - (_textBox.CaretIndex + _textBox.SelectionLength);
+        //    }
+        //    else
+        //    {
+        //        if (_textBox.CaretIndex <= sepPos)
+        //        {
+        //            //if (step != 0)
+        //            //    _position.Offset = step;
+        //            //else
+        //            _position.Offset = _textBox.Text.Length - (_textBox.CaretIndex + _textBox.SelectionLength);
+        //        }
+        //        else
+        //        {
+        //            if (_position.Key == CurrentKey.Back)
+        //            {
+        //                //if (step != 0)
+        //                //    _position.Offset = step - 1;
+        //                //else
+        //                _position.Offset = _textBox.Text.Length - (_textBox.CaretIndex + _textBox.SelectionLength) - 1;
+        //            }
+        //            else if (_position.Key == CurrentKey.Number)
+        //            {
+        //                if (_textBox.CaretIndex == _textBox.Text.Length && _textBox.CaretIndex == sepPos + 1)
+        //                {
+        //                    _position.Offset = _textBox.Text.Length - (_textBox.CaretIndex + _textBox.SelectionLength) + 1;
+        //                }
+        //                else if (_textBox.CaretIndex == sepPos + 1)
+        //                {
+        //                    _position.Offset = _textBox.Text.Length - (_textBox.CaretIndex + _textBox.SelectionLength) + 1;
+        //                }
+        //                else
+        //                {
+        //                    _position.Offset = _textBox.Text.Length - (_textBox.CaretIndex + _textBox.SelectionLength) - 1;
+        //                }
+        //            }
+        //            else
+        //            {
+        //                //if (step != 0)
+        //                //    _position.Offset = step - 1;
+        //                //else
+        //                _position.Offset = _textBox.Text.Length - (_textBox.CaretIndex + _textBox.SelectionLength) + 1;
+        //            }
+        //        }
+        //    }
+        //}
 
         private string getRealFractionString(decimal value, CultureInfo culture)
         {
@@ -1458,9 +1362,21 @@ namespace ag.WPF.NumericBox
 
             Clipboard.SetText(_textBox.SelectedText);
             if (_textBox.SelectionLength != _textBox.Text.Length)
-                _textBox.Text = _textBox.Text.Substring(0, _textBox.SelectionStart) + _textBox.Text.Substring(_textBox.SelectionStart + _textBox.SelectionLength);
+            {
+                var carIndex = _textBox.CaretIndex;
+                var groupSeparator = CultureInfo.CurrentCulture.NumberFormat.NumberGroupSeparator;
+                var text = _textBox.Text;
+                var before = text.Substring(0, _textBox.SelectionStart);
+                _textBox.Text = text.Remove(_textBox.SelectionStart, _textBox.SelectionLength);
+                var after = _textBox.Text.Length >= before.Length ? _textBox.Text.Substring(0, before.Length) : _textBox.Text;
+                var count1 = before.Count(c => c == groupSeparator[0]);
+                var count2 = after.Count(c => c == groupSeparator[0]);
+                _textBox.CaretIndex = carIndex + (count2 - count1);
+            }
             else
+            {
                 Value = null;
+            }
         }
 
         private void pasteCommandBinding(object sender, ExecutedRoutedEventArgs e)
@@ -1478,19 +1394,28 @@ namespace ag.WPF.NumericBox
 
             if (Clipboard.ContainsText())
             {
-                var text = Clipboard.GetText();
-                if (!decimal.TryParse(text, out _))
+                var clipboardText = Clipboard.GetText();
+                if (!decimal.TryParse(clipboardText, out _))
                 {
                     e.Handled = true;
                 }
                 else
                 {
                     _position.Key = CurrentKey.Number;
-                    setPositionOffset();
+
+                    var carIndex = _textBox.CaretIndex;
+                    var selectionStart = _textBox.SelectionStart;
+                    var groupSeparator = CultureInfo.CurrentCulture.NumberFormat.NumberGroupSeparator;
+                    var text = _textBox.Text;
+                    var before = text.Substring(0, _textBox.SelectionStart);
                     if (_textBox.SelectionLength > 0)
-                        _textBox.SelectedText = text;
+                        _textBox.SelectedText = clipboardText;
                     else
-                        _textBox.Text = _textBox.Text.Insert(_textBox.CaretIndex, text);
+                        _textBox.Text = _textBox.Text.Insert(_textBox.CaretIndex, clipboardText);
+                    var after = _textBox.Text.Substring(0, selectionStart + clipboardText.Length); ;
+                    var count1 = before.Count(c => c == groupSeparator[0]);
+                    var count2 = after.Count(c => c == groupSeparator[0]);
+                    _textBox.CaretIndex = carIndex + (count2 - count1)+clipboardText.Length;
                 }
             }
             else

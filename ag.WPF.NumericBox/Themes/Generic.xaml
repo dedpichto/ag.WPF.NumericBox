@@ -26,6 +26,8 @@
                     <TextBox x:Name="PART_Text" 
                              KeyboardNavigation.TabNavigation="Once"
                              Focusable="True"
+                             TabIndex="{TemplateBinding TabIndex}"
+                             IsTabStop="{TemplateBinding IsTabStop}"
                              Background="{StaticResource UpDownBackgroundBrush}" 
                              BorderBrush="{StaticResource UpDownBorderBrush}"
                              BorderThickness="{TemplateBinding BorderThickness}"
