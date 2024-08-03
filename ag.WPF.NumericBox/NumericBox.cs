@@ -1204,7 +1204,7 @@ namespace ag.WPF.NumericBox
                 var formatFraction = new string('0', (int)DecimalPlaces);
 
                 var (intpPart, fracPart) = getDecimalParts(decimalValue.Value, culture);
-                if(_specialCases== SpecialCases.NegativeDotNumber && _userInput)
+                if (_specialCases == SpecialCases.NegativeDotNumber && _userInput)
                 {
                     if (fracPart.Length > DecimalPlaces)
                     {
@@ -1215,10 +1215,25 @@ namespace ag.WPF.NumericBox
                     }
                     return $"{culture.NumberFormat.NegativeSign}{decimalSeparator}{fracPart}";
                 }
-                if (_specialCases == SpecialCases.EndDot && _userInput)
+                if (_specialCases == SpecialCases.EndDot)
                 {
                     intpPart = Convert.ToInt64(intpPart).ToString(formatInt);
-                    return $"{intpPart}{decimalSeparator}";
+                    if (_userInput)
+                    {
+                        return $"{intpPart}{decimalSeparator}";
+                    }
+                    else
+                    {
+                        if (!ShowTrailingZeros)
+                        {
+                            return intpPart;
+                        }
+                        else
+                        {
+                            var format = $"{formatInt}{decimalSeparator}{formatFraction}";
+                            return decimalValue.Value.ToString(format);
+                        }
+                    }
                 }
                 if (_specialCases == SpecialCases.StartDot && _userInput)
                 {
@@ -1249,72 +1264,21 @@ namespace ag.WPF.NumericBox
                         if (fracPart.Length > DecimalPlaces)
                             fracPart = fracPart.Substring(0, (int)DecimalPlaces);
                         intpPart = Convert.ToInt64(intpPart).ToString(formatInt);
+                        if (!ShowTrailingZeros&& _userInput)
+                        {
+                            fracPart = fracPart.TrimEnd('0');
+                        }
                         result = $"{intpPart}{decimalSeparator}{fracPart}";
                     }
                     else
                     {
                         result = Convert.ToInt64(intpPart).ToString(formatInt);
                     }
-                    //var stringFraction = partFraction.ToString(formatFraction);
-                    //if (realDecimalString == "0")
-                    //{
-                    //    stringFraction = "0";
-                    //}
-                    //else
-                    //{
-                    //    var stringFractionFull = partFraction.ToString(formatFractionFull);
-                    //    var diff = stringFractionFull.Length - stringFraction.Length;
-                    //    if (diff > 0 && partFraction != 0)
-                    //    {
-                    //        stringFraction = $"{new string('0', diff)}{stringFraction}";
-                    //    }
-                    //    if (stringFraction.Length > DecimalPlaces)
-                    //    {
-                    //        stringFraction = stringFraction.Substring(0, (int)DecimalPlaces);
-                    //    }
-                    //}
-
-                    //if (!ShowTrailingZeros && DecimalPlaces > 0 && stringFraction.EndsWith("0"))
-                    //{
-
-                    //    if (realDecimalString == null || realDecimalString.Length >= DecimalPlaces)
-                    //    {
-                    //        while (!stringFraction.EndsWith($"{decimalSeparator}0"))
-                    //        {
-                    //            stringFraction = stringFraction.Substring(0, stringFraction.Length - 1);
-                    //            if (!stringFraction.EndsWith("0"))
-                    //                break;
-                    //        }
-                    //    }
-                    //    else
-                    //    {
-                    //        stringFraction = realDecimalString;
-                    //    }
-                    //}
-                    //if (decimalValue < 0 && partInt == 0)
-                    //    stringInt = $"{CultureInfo.CurrentCulture.NumberFormat.NegativeSign}{stringInt}";
-                    //result = DecimalPlaces > 0
-                    //    ? string.IsNullOrEmpty(stringFraction) && !isFocused ? stringInt : $"{stringInt}{decimalSeparator}{stringFraction}"
-                    //    : stringInt;
                 }
                 else
                 {
-                    //var wholeFraction = partFraction / (decimal)Math.Pow(10, fractionCount);
-                    //var wholeNumber = partInt >= 0 ? partInt + wholeFraction : partInt - wholeFraction;
                     var format = $"{formatInt}{decimalSeparator}{formatFraction}";
-
                     result = decimalValue.Value.ToString(format);
-                    //if (!ShowTrailingZeros && DecimalPlaces > 0 && result.EndsWith("0"))
-                    //{
-                    //    while (!result.EndsWith($"{decimalSeparator}0"))
-                    //    {
-                    //        result = result.Substring(0, result.Length - 1);
-                    //        if (!result.EndsWith("0"))
-                    //            break;
-                    //    }
-                    //}
-                    //if (decimalValue < 0 && partInt == 0)
-                    //    result = $"{CultureInfo.CurrentCulture.NumberFormat.NegativeSign}{result}";
                 }
                 if (!_userInput)
                 {
