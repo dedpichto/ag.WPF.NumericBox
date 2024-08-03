@@ -1127,7 +1127,7 @@ namespace ag.WPF.NumericBox
             }
             if (stringFraction.Length < DecimalPlaces)
             {
-                stringFraction = stringFraction.PadRight((int)DecimalPlaces - stringFraction.Length, '0');
+                stringFraction = stringFraction.PadRight((int)DecimalPlaces, '0');
             }
             return (stringInt, stringFraction);
         }
@@ -1203,6 +1203,8 @@ namespace ag.WPF.NumericBox
                 {
                     if (TruncateFractionalPart)
                         fracPart = fracPart.Substring(0, (int)DecimalPlaces);
+                    else
+                        fracPart = Convert.ToDecimal($"0{decimalSeparator}{fracPart}").ToString($"0{decimalSeparator}{formatFraction}").Substring(2);
                 }
                 return $"{decimalSeparator}{fracPart}";
             }
