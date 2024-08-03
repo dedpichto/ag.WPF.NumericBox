@@ -748,11 +748,39 @@ namespace ag.WPF.NumericBox
             var negativeSign = CultureInfo.CurrentCulture.NumberFormat.NegativeSign;
             var carIndex = _textBox.CaretIndex;
             var text = _textBox.Text;
+            var digit = "";
 
             switch (e.Key)
             {
-                case Key.D0 or Key.D1 or Key.D2 or Key.D3 or Key.D4 or Key.D5 or Key.D6 or Key.D7 or Key.D8 or Key.D9
-                or Key.NumPad0 or Key.NumPad1 or Key.NumPad2 or Key.NumPad3 or Key.NumPad4 or Key.NumPad5 or Key.NumPad6 or Key.NumPad7 or Key.NumPad8 or Key.NumPad9:
+                case Key.D0 or Key.NumPad0:
+                    digit = "0";
+                    break;
+                case Key.D1 or Key.NumPad1:
+                    digit = "1";
+                    break;
+                case Key.D2 or Key.NumPad2:
+                    digit = "2";
+                    break;
+                case Key.D3 or Key.NumPad3:
+                    digit = "3";
+                    break;
+                case Key.D4 or Key.NumPad4:
+                    digit = "4";
+                    break;
+                case Key.D5 or Key.NumPad5:
+                    digit = "5";
+                    break;
+                case Key.D6 or Key.NumPad6:
+                    digit = "6";
+                    break;
+                case Key.D7 or Key.NumPad7:
+                    digit = "7";
+                    break;
+                case Key.D8 or Key.NumPad8:
+                    digit = "8";
+                    break;
+                case Key.D9 or Key.NumPad9:
+                    digit = "9";
                     break;
                 case Key.Left:
                 case Key.Right:
@@ -837,16 +865,16 @@ namespace ag.WPF.NumericBox
                         return;
                     }
                 case Key.Back:
-                    if (carIndex == 0)
-                    {
-                        e.Handled = true;
-                        return;
-                    }
                     _userInput = true;
                     //full selection
                     if (_textBox.SelectionLength == text.Length)
                     {
                         Value = null;
+                        e.Handled = true;
+                        return;
+                    }
+                    if (carIndex == 0)
+                    {
                         e.Handled = true;
                         return;
                     }
@@ -963,6 +991,22 @@ namespace ag.WPF.NumericBox
                     }
                     break;
             }
+
+            if (string.IsNullOrEmpty(digit))
+                return;
+
+            _userInput = true;
+            var selectionStart = _textBox.SelectionStart;
+            var beforeDigit = text.Substring(0, _textBox.SelectionStart);
+            if (_textBox.SelectionLength > 0)
+                _textBox.SelectedText = digit;
+            else
+                _textBox.Text = _textBox.Text.Insert(_textBox.CaretIndex, digit);
+            var afterDigit = _textBox.Text.Substring(0, selectionStart + digit.Length); ;
+            var count1Digit = beforeDigit.Count(c => c == groupSeparator[0]);
+            var count2Digit = afterDigit.Count(c => c == groupSeparator[0]);
+            _textBox.CaretIndex = carIndex + (count2Digit - count1Digit) + digit.Length;
+            e.Handled = true;
         }
 
         private void textBox_GotFocus(object sender, RoutedEventArgs e)
@@ -1383,7 +1427,7 @@ namespace ag.WPF.NumericBox
                     var after = _textBox.Text.Substring(0, selectionStart + clipboardText.Length); ;
                     var count1 = before.Count(c => c == groupSeparator[0]);
                     var count2 = after.Count(c => c == groupSeparator[0]);
-                    _textBox.CaretIndex = carIndex + (count2 - count1)+clipboardText.Length;
+                    _textBox.CaretIndex = carIndex + (count2 - count1) + clipboardText.Length;
                 }
             }
             else
