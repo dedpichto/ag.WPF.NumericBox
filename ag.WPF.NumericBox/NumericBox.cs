@@ -34,14 +34,6 @@ namespace ag.WPF.NumericBox
             Decimal
         }
 
-        private struct CurrentPosition
-        {
-            public CurrentKey Key;
-            public int Offset;
-            public bool Exclude;
-            public int Addition;
-        }
-
         #region Constants
         private const string _elementText = "PART_Text";
         #endregion
@@ -50,7 +42,6 @@ namespace ag.WPF.NumericBox
         private TextBox _textBox;
         #endregion
 
-        private CurrentPosition _position;
         private bool _gotFocus;
         private bool _userInput;
         private bool _isLoaded;
@@ -737,10 +728,6 @@ namespace ag.WPF.NumericBox
         private void textBox_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             _gotFocus = false;
-            _position.Key = CurrentKey.None;
-            _position.Offset = 0;
-            _position.Exclude = false;
-            _position.Addition = 0;
 
             if ((Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift)
             {
@@ -766,7 +753,6 @@ namespace ag.WPF.NumericBox
             {
                 case Key.D0 or Key.D1 or Key.D2 or Key.D3 or Key.D4 or Key.D5 or Key.D6 or Key.D7 or Key.D8 or Key.D9
                 or Key.NumPad0 or Key.NumPad1 or Key.NumPad2 or Key.NumPad3 or Key.NumPad4 or Key.NumPad5 or Key.NumPad6 or Key.NumPad7 or Key.NumPad8 or Key.NumPad9:
-                    _position.Key = CurrentKey.Number;
                     break;
                 case Key.Left:
                 case Key.Right:
@@ -779,7 +765,6 @@ namespace ag.WPF.NumericBox
                         e.Handled = true;
                         return;
                     }
-                    _position.Key = CurrentKey.Delete;
                     _userInput = true;
                     //full selection
                     if (_textBox.SelectionLength == text.Length)
@@ -857,7 +842,6 @@ namespace ag.WPF.NumericBox
                         e.Handled = true;
                         return;
                     }
-                    _position.Key = CurrentKey.Back;
                     _userInput = true;
                     //full selection
                     if (_textBox.SelectionLength == text.Length)
@@ -948,13 +932,11 @@ namespace ag.WPF.NumericBox
                         if (decimalIndex >= 0 && _textBox.SelectionLength != text.Length)
                         {
                             _textBox.CaretIndex = decimalIndex + 1;
-                            _position.Key = CurrentKey.Decimal;
                             e.Handled = true;
                         }
                         else
                         {
                             _userInput = true;
-                            _position.Key = CurrentKey.Decimal;
                         }
                     }
                     else
@@ -968,13 +950,11 @@ namespace ag.WPF.NumericBox
                         if (decimalIndex >= 0 && _textBox.SelectionLength != text.Length)
                         {
                             _textBox.CaretIndex = decimalIndex + 1;
-                            _position.Key = CurrentKey.Decimal;
                             e.Handled = true;
                         }
                         else
                         {
                             _userInput = true;
-                            _position.Key = CurrentKey.Decimal;
                         }
                     }
                     else
@@ -1349,11 +1329,6 @@ namespace ag.WPF.NumericBox
         }
         private void cutCommandBinding(object sender, ExecutedRoutedEventArgs e)
         {
-            _position.Offset = 0;
-            _position.Exclude = false;
-            _position.Key = CurrentKey.None;
-            _position.Addition = 0;
-
             if (IsReadOnly)
             {
                 e.Handled = true;
@@ -1381,11 +1356,6 @@ namespace ag.WPF.NumericBox
 
         private void pasteCommandBinding(object sender, ExecutedRoutedEventArgs e)
         {
-            _position.Offset = 0;
-            _position.Exclude = false;
-            _position.Key = CurrentKey.None;
-            _position.Addition = 0;
-
             if (IsReadOnly)
             {
                 e.Handled = true;
@@ -1401,8 +1371,6 @@ namespace ag.WPF.NumericBox
                 }
                 else
                 {
-                    _position.Key = CurrentKey.Number;
-
                     var carIndex = _textBox.CaretIndex;
                     var selectionStart = _textBox.SelectionStart;
                     var groupSeparator = CultureInfo.CurrentCulture.NumberFormat.NumberGroupSeparator;
