@@ -572,14 +572,7 @@ namespace ag.WPF.NumericBox
         private void textBox_LostFocus(object sender, RoutedEventArgs e)
         {
             _gotFocus = false;
-            if (_textBox.Text == CultureInfo.CurrentCulture.NumberFormat.NegativeSign)
-            {
-                Value = null;
-            }
-            else if (_textBox.Text.EndsWith(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator) && !ShowTrailingZeros)
-            {
-                _textBox.Text = _textBox.Text.Substring(0, _textBox.Text.Length - 1);
-            }
+            convertToString(Value);
         }
 
         private void textBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -793,10 +786,10 @@ namespace ag.WPF.NumericBox
                         e.Handled = true;
                         return;
                     }
-                    _userInput = true;
                     //full selection
                     if (_textBox.SelectionLength == text.Length)
                     {
+                        _userInput = true;
                         Value = null;
                         e.Handled = true;
                         return;
@@ -808,6 +801,7 @@ namespace ag.WPF.NumericBox
                         {
                             if (_textBox.SelectionLength == 0)
                             {
+                                _userInput = true;
                                 _textBox.Text = text.SetChar('0', carIndex);
                                 _textBox.CaretIndex = carIndex + 1;
                             }
@@ -820,6 +814,7 @@ namespace ag.WPF.NumericBox
                                         break;
                                     arr.Add(i);
                                 }
+                                _userInput = true;
                                 _textBox.Text = text.SetChars('0', arr.ToArray());
                                 _textBox.CaretIndex = carIndex + arr.Count;
                             }
@@ -837,6 +832,7 @@ namespace ag.WPF.NumericBox
                             return;
                         }
                         var before = text.Substring(0, carIndex);
+                        _userInput = true;
                         if (text[carIndex] == groupSeparator[0])
                         {
                             _textBox.Text = text.Remove(carIndex, 2);
@@ -856,6 +852,7 @@ namespace ag.WPF.NumericBox
                     else
                     {
                         var before = text.Substring(0, _textBox.SelectionStart);
+                        _userInput = true;
                         _textBox.Text = text.Remove(_textBox.SelectionStart, _textBox.SelectionLength);
                         var after = _textBox.Text.Length >= before.Length ? _textBox.Text.Substring(0, before.Length) : _textBox.Text;
                         var count1 = before.Count(c => c == groupSeparator[0]);
@@ -865,10 +862,10 @@ namespace ag.WPF.NumericBox
                         return;
                     }
                 case Key.Back:
-                    _userInput = true;
                     //full selection
                     if (_textBox.SelectionLength == text.Length)
                     {
+                        _userInput = true;
                         Value = null;
                         e.Handled = true;
                         return;
@@ -885,6 +882,7 @@ namespace ag.WPF.NumericBox
                         {
                             if (_textBox.SelectionLength == 0)
                             {
+                                _userInput = true;
                                 _textBox.Text = text.SetChar('0', carIndex - 1);
                                 _textBox.CaretIndex = carIndex - 1;
                             }
@@ -897,6 +895,7 @@ namespace ag.WPF.NumericBox
                                         break;
                                     arr.Add(i);
                                 }
+                                _userInput = true;
                                 _textBox.Text = text.SetChars('0', arr.ToArray());
                                 _textBox.CaretIndex = carIndex;
                             }
@@ -917,6 +916,7 @@ namespace ag.WPF.NumericBox
                                         break;
                                     arr.Add(i);
                                 }
+                                _userInput = true;
                                 _textBox.Text = text.SetChars('0', arr.ToArray());
                                 _textBox.CaretIndex = carIndex;
                             }
@@ -927,6 +927,7 @@ namespace ag.WPF.NumericBox
                     if (_textBox.SelectionLength == 0)
                     {
                         var before = text.Substring(0, carIndex);
+                        _userInput = true;
                         if (text[carIndex] == groupSeparator[0])
                         {
                             _textBox.Text = text.Remove(carIndex - 1, 2);
@@ -946,6 +947,7 @@ namespace ag.WPF.NumericBox
                     else
                     {
                         var before = text.Substring(0, _textBox.SelectionStart);
+                        _userInput = true;
                         _textBox.Text = text.Remove(_textBox.SelectionStart, _textBox.SelectionLength);
                         var after = _textBox.Text.Length >= before.Length ? _textBox.Text.Substring(0, before.Length) : _textBox.Text;
                         var count1 = before.Count(c => c == groupSeparator[0]);
