@@ -1631,7 +1631,7 @@ namespace ag.WPF.NumericBox
     }
 
     /// <summary>
-    /// 
+    /// Represents class for NumericBox foreground conversion.
     /// </summary>
     public class NumericBoxForegroundConverter : IMultiValueConverter
     {
