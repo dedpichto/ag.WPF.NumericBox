@@ -241,8 +241,8 @@ namespace ag.WPF.NumericBox
                 if (((box._isDeletePressed && box._deleteAtEnd) || (box._isBackPressed && box._backAtEnd)) && !box.ShowTrailingZeros)
                     return;
                 box.Text = box.convertToString((decimal?)e.NewValue);
-                box.OnValueChanged(Convert.ToDecimal(e.OldValue), Convert.ToDecimal(e.NewValue));
             }
+            box.OnValueChanged(Convert.ToDecimal(e.OldValue), Convert.ToDecimal(e.NewValue));
         }
 
         /// <summary>
@@ -262,6 +262,12 @@ namespace ag.WPF.NumericBox
         private static void OnDecimalPlacesChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
         {
             if (sender is not NumericBox box) return;
+            if (box._isLoaded)
+            {
+                if (((box._isDeletePressed && box._deleteAtEnd) || (box._isBackPressed && box._backAtEnd)) && !box.ShowTrailingZeros)
+                    return;
+                box.Text = box.convertToString(box.Value);
+            }
             box.OnDecimalPlacesChanged((uint)e.OldValue, (uint)e.NewValue);
         }
 
@@ -282,6 +288,12 @@ namespace ag.WPF.NumericBox
         private static void OnUseGroupSeparatorChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
         {
             if (sender is not NumericBox box) return;
+            if (box._isLoaded)
+            {
+                if (((box._isDeletePressed && box._deleteAtEnd) || (box._isBackPressed && box._backAtEnd)) && !box.ShowTrailingZeros)
+                    return;
+                box.Text = box.convertToString(box.Value);
+            }
             box.OnUseGroupSeparatorChanged((bool)e.OldValue, (bool)e.NewValue);
         }
 
@@ -340,6 +352,12 @@ namespace ag.WPF.NumericBox
         private static void OnShowTrailingZerosChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
         {
             if (sender is not NumericBox box) return;
+            if (box._isLoaded)
+            {
+                if (((box._isDeletePressed && box._deleteAtEnd) || (box._isBackPressed && box._backAtEnd)) && !box.ShowTrailingZeros)
+                    return;
+                box.Text = box.convertToString(box.Value);
+            }
             box.OnShowTrailingZerosChanged((bool)e.OldValue, (bool)e.NewValue);
         }
 
@@ -384,6 +402,12 @@ namespace ag.WPF.NumericBox
         private static void OnTruncateFractionalPartChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
         {
             if (sender is not NumericBox box) return;
+            if (box._isLoaded)
+            {
+                if (((box._isDeletePressed && box._deleteAtEnd) || (box._isBackPressed && box._backAtEnd)) && !box.ShowTrailingZeros)
+                    return;
+                box.Text = box.convertToString(box.Value);
+            }
             box.OnTruncateFractionalPartChanged((bool)e.OldValue, (bool)e.NewValue);
         }
         #endregion
@@ -1093,7 +1117,8 @@ namespace ag.WPF.NumericBox
                         var textTotal = $"{textBefore}{textAfter}";
                         if (textTotal.Length > DecimalPlaces)
                         {
-                            _textBox.Text = _textBox.Text.Insert(carIndex, _digit).Substring(0, _textBox.Text.Length - 1);
+                            var temp = _textBox.Text.Insert(carIndex, _digit);
+                            _textBox.Text = temp.Substring(0, temp.Length - 1);
                         }
                         else
                         {
