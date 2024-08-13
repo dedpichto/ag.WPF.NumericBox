@@ -47,6 +47,8 @@ namespace ag.WPF.NumericBox
         private string _digit;
         private bool _isBackPressed;
         private bool _isDeletePressed;
+        private bool _backAtEnd;
+        private bool _deleteAtEnd;
         private bool _isLoaded;
 
 
@@ -236,6 +238,8 @@ namespace ag.WPF.NumericBox
             if (sender is not NumericBox box) return;
             if (box._isLoaded)
             {
+                if (((box._isDeletePressed && box._deleteAtEnd) || (box._isBackPressed && box._backAtEnd)) && !box.ShowTrailingZeros)
+                    return;
                 box.Text = box.convertToString((decimal?)e.NewValue);
                 box.OnValueChanged(Convert.ToDecimal(e.OldValue), Convert.ToDecimal(e.NewValue));
             }
@@ -748,6 +752,8 @@ namespace ag.WPF.NumericBox
             _digit = "";
             _isBackPressed = false;
             _isDeletePressed = false;
+            _backAtEnd = false;
+            _deleteAtEnd = false;
 
             switch (e.Key)
             {
@@ -816,14 +822,24 @@ namespace ag.WPF.NumericBox
                     {
                         if (carIndex < text.Length)
                         {
+                            _deleteAtEnd = true;
                             if (_textBox.SelectionLength == 0)
                             {
                                 _userInput = true;
-                                _textBox.Text = text.SetChar('0', carIndex);
-                                _textBox.CaretIndex = carIndex + 1;
+                                if (ShowTrailingZeros)
+                                {
+                                    _textBox.Text = text.SetChar('0', carIndex);
+                                    _textBox.CaretIndex = carIndex + 1;
+                                }
+                                else
+                                {
+                                    _textBox.Text = _textBox.Text.Remove(carIndex, 1);
+                                    _textBox.CaretIndex = carIndex;
+                                }
                             }
                             else
                             {
+                                _userInput = true;
                                 var arr = new List<int>();
                                 for (var i = _textBox.SelectionStart; ; i++)
                                 {
@@ -831,9 +847,16 @@ namespace ag.WPF.NumericBox
                                         break;
                                     arr.Add(i);
                                 }
-                                _userInput = true;
-                                _textBox.Text = text.SetChars('0', arr.ToArray());
-                                _textBox.CaretIndex = carIndex + arr.Count;
+                                if (ShowTrailingZeros)
+                                {
+                                    _textBox.Text = text.SetChars('0', arr.ToArray());
+                                    _textBox.CaretIndex = carIndex + arr.Count;
+                                }
+                                else
+                                {
+                                    _textBox.Text = _textBox.Text.Remove(carIndex, _textBox.SelectionLength);
+                                    _textBox.CaretIndex = carIndex;
+                                }
                             }
 
                         }
@@ -868,6 +891,8 @@ namespace ag.WPF.NumericBox
                     }
                     else
                     {
+                        //if (decimalIndex >= 0 && _textBox.SelectionStart + _textBox.SelectionLength > decimalIndex)
+                        //    _deleteAtEnd = true;
                         var before = text.Substring(0, _textBox.SelectionStart);
                         _userInput = true;
                         _textBox.Text = text.Remove(_textBox.SelectionStart, _textBox.SelectionLength);
@@ -896,6 +921,7 @@ namespace ag.WPF.NumericBox
                     //decimal part with caret index after decimal sign
                     if (decimalIndex >= 0 && carIndex > decimalIndex)
                     {
+                        _backAtEnd = true;
                         if (text[carIndex - 1] != decimalSeparator[0])
                         {
                             if (_textBox.SelectionLength == 0)
@@ -907,7 +933,7 @@ namespace ag.WPF.NumericBox
                                 }
                                 else
                                 {
-                                    _textBox.Text = _textBox.Text.Substring(0, carIndex - 1);
+                                    _textBox.Text = _textBox.Text.Remove(carIndex - 1, 1);
                                 }
                                 _textBox.CaretIndex = carIndex - 1;
                             }
@@ -921,7 +947,14 @@ namespace ag.WPF.NumericBox
                                     arr.Add(i);
                                 }
                                 _userInput = true;
-                                _textBox.Text = text.SetChars('0', arr.ToArray());
+                                if (ShowTrailingZeros)
+                                {
+                                    _textBox.Text = text.SetChars('0', arr.ToArray());
+                                }
+                                else
+                                {
+                                    _textBox.Text = _textBox.Text.Remove(carIndex, _textBox.SelectionLength);
+                                }
                                 _textBox.CaretIndex = carIndex;
                             }
 
@@ -942,7 +975,14 @@ namespace ag.WPF.NumericBox
                                     arr.Add(i);
                                 }
                                 _userInput = true;
-                                _textBox.Text = text.SetChars('0', arr.ToArray());
+                                if (ShowTrailingZeros)
+                                {
+                                    _textBox.Text = text.SetChars('0', arr.ToArray());
+                                }
+                                else
+                                {
+                                    _textBox.Text = _textBox.Text.Remove(carIndex, _textBox.SelectionLength);
+                                }
                                 _textBox.CaretIndex = carIndex;
                             }
                         }
@@ -978,6 +1018,8 @@ namespace ag.WPF.NumericBox
                     }
                     else
                     {
+                        //if (decimalIndex >= 0 && _textBox.SelectionStart + _textBox.SelectionLength > decimalIndex)
+                        //    _backAtEnd = true;
                         var before = text.Substring(0, _textBox.SelectionStart);
                         _userInput = true;
                         _textBox.Text = text.Remove(_textBox.SelectionStart, _textBox.SelectionLength);
@@ -1033,14 +1075,43 @@ namespace ag.WPF.NumericBox
                 return;
 
             _userInput = true;
-            var isDCaretAtEnd = carIndex == _textBox.Text.Length;
+            var isCaretAtEnd = carIndex == _textBox.Text.Length && carIndex > 0;
             var selectionStart = _textBox.SelectionStart;
             var beforeDigit = text.Substring(0, _textBox.SelectionStart);
             if (_textBox.SelectionLength > 0)
+            {
                 _textBox.SelectedText = _digit;
+            }
             else
-                _textBox.Text = _textBox.Text.Insert(_textBox.CaretIndex, _digit);
-            if (isDCaretAtEnd)
+            {
+                if (decimalIndex >= 0)
+                {
+                    if (carIndex > decimalIndex)
+                    {
+                        var textBefore = _textBox.Text.Substring(decimalIndex + 1, carIndex - (decimalIndex + 1));
+                        var textAfter = _digit + _textBox.Text.Substring(carIndex);
+                        var textTotal = $"{textBefore}{textAfter}";
+                        if (textTotal.Length > DecimalPlaces)
+                        {
+                            _textBox.Text = _textBox.Text.Insert(carIndex, _digit).Substring(0, _textBox.Text.Length - 1);
+                        }
+                        else
+                        {
+                            _textBox.Text = _textBox.Text.Insert(carIndex, _digit);
+                        }
+                    }
+                    else
+                    {
+                        _textBox.Text = _textBox.Text.Insert(carIndex, _digit);
+                    }
+                }
+                else
+                {
+                    _textBox.Text = _textBox.Text.Insert(carIndex, _digit);
+                }
+
+            }
+            if (isCaretAtEnd)
             {
                 _textBox.CaretIndex = _textBox.Text.Length;
             }
