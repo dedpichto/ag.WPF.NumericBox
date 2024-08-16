@@ -106,7 +106,7 @@ namespace ag.WPF.NumericBox
             get => (string)GetValue(TextProperty);
             set
             {
-                if (!string.IsNullOrEmpty(value) && !decimal.TryParse(value, out _) && !value.In(CultureInfo.CurrentCulture.NumberFormat.NegativeSign, CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator,$"{CultureInfo.CurrentCulture.NumberFormat.NegativeSign}{CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator}"))
+                if (!string.IsNullOrEmpty(value) && !decimal.TryParse(value, out _) && !value.In(CultureInfo.CurrentCulture.NumberFormat.NegativeSign, CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator, $"{CultureInfo.CurrentCulture.NumberFormat.NegativeSign}{CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator}"))
                 {
                     throw new FormatException("Input string was not in a correct format.");
                 }
@@ -679,14 +679,19 @@ namespace ag.WPF.NumericBox
                     e.Handled = true;
                 return;
             }
+            else if (e.Key.In(Key.Home, Key.End, Key.Left, Key.Right, Key.Tab, Key.Enter, Key.Return))
+            {
+                return;
+            }
+
+            if (IsReadOnly)
+            {
+                e.Handled= true;
+                return;
+            }
 
             switch (e.Key)
             {
-                case Key.Left:
-                case Key.Right:
-                case Key.Home:
-                case Key.End:
-                    break;
                 case Key.Delete:
                     if ((_textBox.SelectionLength == _textBox.Text.Length) || (_textBox.CaretIndex == 0 && _textBox.Text.Length == 1))
                     {
