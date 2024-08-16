@@ -110,6 +110,7 @@ namespace ag.WPF.NumericBox
             get => (string)GetValue(TextProperty);
             set
             {
+                var tempValue = "";
                 if (value != null)
                 {
                     var groupsSeparator = CultureInfo.CurrentCulture.NumberFormat.NumberGroupSeparator;
@@ -120,9 +121,14 @@ namespace ag.WPF.NumericBox
                         value = value.Substring(0, value.Length - 1);
                     value = value.Replace($"{groupsSeparator}{groupsSeparator}", groupsSeparator);
                     value = value.Replace($"{negativeSign}{groupsSeparator}", negativeSign);
+                    tempValue = value.Replace($"{groupsSeparator}", "");
                 }
-                if (!string.IsNullOrEmpty(value) && !decimal.TryParse(value, out _) && !value.In(CultureInfo.CurrentCulture.NumberFormat.NegativeSign, CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator, $"{CultureInfo.CurrentCulture.NumberFormat.NegativeSign}{CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator}"))
+                if (!string.IsNullOrEmpty(value) && !double.TryParse(tempValue, out var dv) && !value.In(CultureInfo.CurrentCulture.NumberFormat.NegativeSign, CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator, $"{CultureInfo.CurrentCulture.NumberFormat.NegativeSign}{CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator}"))
                 {
+                    if (dv > (double)decimal.MaxValue || dv < (double)decimal.MinValue)
+                    {
+                        throw new OverflowException("Value is too large or too small for decimal.");
+                    }
                     throw new FormatException("Input string was not in a correct format.");
                 }
                 SetValue(TextProperty, !string.IsNullOrEmpty(value) ? value : null);
@@ -617,138 +623,8 @@ namespace ag.WPF.NumericBox
                     _textBox.SelectAll();
                     _gotFocus = false;
                 }
-                //if (_position.Exclude)
-                //    return;
-                //if (_position.Key.In(CurrentKey.Number, CurrentKey.Back, CurrentKey.Decimal))
-                //{
-                //    if (_textBox.Text.Length >= _position.Offset)
-                //    {
-                //        _textBox.CaretIndex = _textBox.Text.Length - _position.Offset;
-                //    }
-                //}
-                //return;
             }
-
-            //if (_position.Exclude)
-            //    return;
-            //if (_position.Key.In(CurrentKey.Number, CurrentKey.Back, CurrentKey.Decimal, CurrentKey.Delete))
-            //{
-            //    if (_textBox.Text.Length >= _position.Offset)
-            //    {
-            //        _textBox.CaretIndex = _textBox.Text.Length - _position.Offset;
-            //    }
-            //}
         }
-
-        //private void textBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
-        //{
-        //    try
-        //    {
-        //        var sepPos = _textBox.Text.IndexOf(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator);
-        //        _gotFocus = false;
-        //        if (e.Text == CultureInfo.CurrentCulture.NumberFormat.NumberGroupSeparator)
-        //        {
-        //            e.Handled = true;
-        //            return;
-        //        }
-        //        else if (e.Text == CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator)
-        //        {
-        //            if (DecimalPlaces == 0)
-        //            {
-        //                e.Handled = true;
-        //                return;
-        //            }
-
-        //            //if (ShowTrailingZeros)
-        //            //{
-        //            //    if (_textBox.Text != CultureInfo.CurrentCulture.NumberFormat.NegativeSign)
-        //            //    {
-        //            //        _textBox.CaretIndex = _textBox.Text.IndexOf(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator) + 1;
-        //            //        e.Handled = true;
-        //            //    }
-        //            //    else
-        //            //    {
-        //            //        _userInput = true;
-        //            //        _position.Key = CurrentKey.Decimal;
-        //            //    }
-        //            //}
-        //            //else
-        //            //{
-        //            //    if (_textBox.Text.IndexOf(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator, StringComparison.Ordinal) == -1)
-        //            //    {
-        //            //        _userInput = true;
-        //            //        _position.Key = CurrentKey.Decimal;
-        //            //    }
-        //            //    else
-        //            //    {
-        //            //        _textBox.CaretIndex = _textBox.Text.IndexOf(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator) + 1;
-        //            //        e.Handled = true;
-        //            //    }
-        //            //}
-        //            //return;
-        //        }
-        //        else if (e.Text == CultureInfo.CurrentCulture.NumberFormat.NegativeSign)
-        //        {
-        //            if (_textBox.SelectionLength == _textBox.Text.Length)
-        //            {
-        //                _userInput = true;
-        //                return;
-        //            }
-        //            if (_textBox.CaretIndex > 0)
-        //            {
-        //                e.Handled = true;
-        //                return;
-        //            }
-        //        }
-        //        else if (!e.Text.In("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"))
-        //        {
-        //            e.Handled = true;
-        //            return;
-        //        }
-
-        //        //if (ShowTrailingZeros && e.Text.In("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")
-        //        //    && _textBox.Text.Contains(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator)
-        //        //    && _textBox.CaretIndex == _textBox.Text.Length)
-        //        //{
-        //        //    e.Handled = true;
-        //        //    return;
-        //        //}
-        //        //else
-        //        //{
-        //        //    _userInput = true;
-        //        //    _position.Key = CurrentKey.Number;
-        //        //    //_position.Offset = 1;
-        //        //    step = 1;
-        //        //}
-        //        if (e.Text.In("1", "2", "3", "4", "5", "6", "7", "8", "9"))
-        //        {
-        //            _userInput = true;
-        //            _position.Key = CurrentKey.Number;
-        //            _position.Addition = 1;
-        //        }
-        //        else if (e.Text == "0")
-        //        {
-        //            _userInput = true;
-        //            _position.Key = CurrentKey.Number;
-        //            if (DecimalPlaces > 0)
-        //            {
-        //                var parts = _textBox.Text.Split(new char[] { CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator[0] });
-        //                if (parts.Length == 2 && parts[1].Length == DecimalPlaces)
-        //                {
-        //                    e.Handled = true;
-        //                    return;
-        //                }
-        //            }
-        //        }
-        //    }
-        //    finally
-        //    {
-        //        if (!e.Handled)
-        //        {
-        //            setPositionOffset();
-        //        }
-        //    }
-        //}
 
         private void textBox_PreviewKeyDown(object sender, KeyEventArgs e)
         {
@@ -766,6 +642,17 @@ namespace ag.WPF.NumericBox
                     e.Handled = true;
                 return;
             }
+            else if (e.Key.In(Key.Left, Key.Right, Key.Home, Key.End, Key.Tab, Key.Enter, Key.Return))
+            {
+                return;
+            }
+
+            if (IsReadOnly)
+            {
+                e.Handled = true;
+                return;
+            }
+
             var decimalSeparator = CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator;
             var groupSeparator = CultureInfo.CurrentCulture.NumberFormat.NumberGroupSeparator;
             var isNegative = _textBox.Text.IndexOf(CultureInfo.CurrentCulture.NumberFormat.NegativeSign, StringComparison.Ordinal) >= 0;
@@ -820,12 +707,6 @@ namespace ag.WPF.NumericBox
                     }
                     e.Handled = true;
                     return;
-                case Key.Left:
-                case Key.Right:
-                case Key.Home:
-                case Key.End:
-                case Key.Tab:
-                    break;
                 case Key.Delete:
                     _isDeletePressed = true;
                     if (carIndex == text.Length)
@@ -1592,7 +1473,10 @@ namespace ag.WPF.NumericBox
                         _textBox.SelectedText = clipboardText;
                     else
                         _textBox.Text = _textBox.Text.Insert(_textBox.CaretIndex, clipboardText);
-                    var after = _textBox.Text.Substring(0, selectionStart + clipboardText.Length); ;
+                    var after = _textBox.Text.Length >= carIndex + clipboardText.Length
+                        ? _textBox.Text.Substring(0, carIndex + clipboardText.Length)
+                        : _textBox.Text;
+
                     var count1 = before.Count(c => c == groupSeparator[0]);
                     var count2 = after.Count(c => c == groupSeparator[0]);
                     _textBox.CaretIndex = carIndex + (count2 - count1) + clipboardText.Length;
