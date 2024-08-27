@@ -98,7 +98,11 @@ namespace ag.WPF.NumericBox
         /// </summary>
         public static readonly DependencyProperty TextProperty = DependencyProperty.Register(nameof(Text), typeof(string), typeof(NumericBox),
                 new FrameworkPropertyMetadata("", OnTextChanged));
-
+        /// <summary>
+        /// The identifier of the <see cref="AllowShortcuts"/> dependency property.
+        /// </summary>
+        public static readonly DependencyProperty AllowShortcutsProperty = DependencyProperty.Register(nameof(AllowShortcuts), typeof(bool), typeof(NumericBox),
+                new FrameworkPropertyMetadata(false, OnAllowShortcutsChanged));
         #endregion
 
         #region Public properties
@@ -201,6 +205,14 @@ namespace ag.WPF.NumericBox
         {
             get => (bool)GetValue(ShowTrailingZerosProperty);
             set => SetValue(ShowTrailingZerosProperty, value);
+        }
+        /// <summary>
+        /// Gets or sets the value that indicates whether character shortcuts as ('K', 'C', 'L', 'M') can be used fo quick change of the NumericBox value.
+        /// </summary>
+        public bool AllowShortcuts
+        {
+            get => (bool)GetValue(AllowShortcutsProperty);
+            set => SetValue(AllowShortcutsProperty, value);
         }
         #endregion
 
@@ -368,6 +380,25 @@ namespace ag.WPF.NumericBox
         }
 
         /// <summary>
+        /// Invoked just before the <see cref="AllowShortcutsChanged"/> event is raised on NumericBox
+        /// </summary>
+        /// <param name="oldValue"></param>
+        /// <param name="newValue"></param>
+        private void OnAllowShortcutsChanged(bool oldValue, bool newValue)
+        {
+            var e = new RoutedPropertyChangedEventArgs<bool>(oldValue, newValue)
+            {
+                RoutedEvent = AllowShortcutsChangedEvent
+            };
+            RaiseEvent(e);
+        }
+        private static void OnAllowShortcutsChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
+        {
+            if (sender is not NumericBox box) return;
+            box.OnAllowShortcutsChanged((bool)e.OldValue, (bool)e.NewValue);
+        }
+
+        /// <summary>
         /// Invoked just before the <see cref="TextChanged"/> event is raised on NumericBox
         /// </summary>
         /// <param name="oldValue">Old value</param>
@@ -515,6 +546,20 @@ namespace ag.WPF.NumericBox
         /// Identifies the <see cref="ShowTrailingZerosChanged"/> routed event.
         /// </summary>
         public static readonly RoutedEvent ShowTrailingZerosChangedEvent = EventManager.RegisterRoutedEvent("ShowTrailingZerosChanged",
+            RoutingStrategy.Bubble, typeof(RoutedPropertyChangedEventHandler<bool>), typeof(NumericBox));
+
+        /// <summary>
+        /// Occurs when the <see cref="AllowShortcuts"/> property has been changed in some way.
+        /// </summary>
+        public event RoutedPropertyChangedEventHandler<bool> AllowShortcutsChanged
+        {
+            add => AddHandler(AllowShortcutsChangedEvent, value);
+            remove => RemoveHandler(AllowShortcutsChangedEvent, value);
+        }
+        /// <summary>
+        /// Identifies the <see cref="AllowShortcutsChanged"/> routed event.
+        /// </summary>
+        public static readonly RoutedEvent AllowShortcutsChangedEvent = EventManager.RegisterRoutedEvent("AllowShortcutsChanged",
             RoutingStrategy.Bubble, typeof(RoutedPropertyChangedEventHandler<bool>), typeof(NumericBox));
 
         /// <summary>
@@ -929,7 +974,11 @@ namespace ag.WPF.NumericBox
                 case Key.OemPeriod or Key.Decimal:
                     if (decimalSeparator == ".")
                     {
-                        if (decimalIndex >= 0 && _textBox.SelectionLength != text.Length)
+                        if (DecimalPlaces == 0)
+                        {
+                            e.Handled = true;
+                        }
+                        else if (decimalIndex >= 0 && _textBox.SelectionLength != text.Length)
                         {
                             _textBox.CaretIndex = decimalIndex + 1;
                             e.Handled = true;
@@ -943,7 +992,11 @@ namespace ag.WPF.NumericBox
                 case Key.OemComma:
                     if (decimalSeparator == ",")
                     {
-                        if (decimalIndex >= 0 && _textBox.SelectionLength != text.Length)
+                        if (DecimalPlaces == 0)
+                        {
+                            e.Handled = true;
+                        }
+                        else if(decimalIndex >= 0 && _textBox.SelectionLength != text.Length)
                         {
                             _textBox.CaretIndex = decimalIndex + 1;
                             e.Handled = true;
@@ -953,6 +1006,34 @@ namespace ag.WPF.NumericBox
                     {
                         e.Handled = true;
                     }
+                    break;
+                case Key.D or Key.H or Key.K or Key.C or Key.L or Key.M:
+                    if (AllowShortcuts && Value != null)
+                    {
+                        switch (e.Key)
+                        {
+                            case Key.D:
+                                Value *= 10;
+                                break;
+                            case Key.H:
+                                Value *= 100;
+                                break;
+                            case Key.K:
+                                Value *= 1000;
+                                break;
+                            case Key.C:
+                                Value *= 10000;
+                                break;
+                            case Key.L:
+                                Value *= 100000;
+                                break;
+                            case Key.M:
+                                Value *= 1000000;
+                                break;
+                        }
+                    }
+                    _textBox.CaretIndex = carIndex;
+                    e.Handled = true;
                     break;
                 default:
                     e.Handled = true;
