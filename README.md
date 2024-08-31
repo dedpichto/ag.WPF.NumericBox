@@ -32,7 +32,7 @@ Use Nuget packages
 
 ## Properties
 
-Property name | Return value | Description | Default value
+Property name | Value type | Description | Default value
 --- | --- | --- | ---
 DecimalPlaces | uint | Gets or sets the value that indicates the count of decimal digits shown at NumericBox | 0
 IsReadOnly | bool | Gets or sets the value that indicates whether NumericBox is in read-only state | False
@@ -43,6 +43,32 @@ TextAlignment | TextAlignment | Gets or sets the text alignment of NumericBox | 
 ShowTrailingZeros | bool | Gets or sets the value that indicates whether trailing zeros in decimal part of NumericBox should be shown | True
 TruncateFractionalPart | bool | Gets or sets the property specified whether fractional part of decimal value will be truncated (True) accordingly to DecimalPlaces or rounded (False) | True
 Text | string | Gets or sets the string representation of Value property | Empty string
+AllowShortcuts | bool | Gets or sets the value that indicates whether characters 'D', 'H', 'K', 'C', 'L', 'M' can be used for quick multiplying the NumericBox value by 10, 100, 1000, 10000, 100000 or 1000000. | False
+ShortcutsSource | IEnumerable\<NumericBoxShortcut\> | Gets or sets the source of NumericBox shortcuts | null
+
+## Remarks
+
+**AllowShortcuts** property defaults are:
+
+- D =\> multiplies the value by 10
+- H =\> multiplies the value by 100
+- K =\> multiplies the value by 1000
+- L =\> multiplies the value by 10000
+- C =\> multiplies the value by 100000
+- M =\> multiplies the value by 1000000
+
+Setting the **ShortcutsSource** property will add new shortcusts or override existing ones (depending by shortcut key).
+
+## Additional classes
+
+### NumericBoxShortcut
+
+Represents object for setting ke/multiplier pair. When the specified key is pressed, the value of NumericBox is multiplied by corresponding multiplier.
+
+Property name | Value type | Description
+--- | --- | ---
+Multiplier | int | Gets or sets the shortcut's multiplier
+Key | System.Windows.Input.Key | Gets or sets the shortcut's key
 
 ## Events
 

@@ -225,7 +225,7 @@ namespace ag.WPF.NumericBox
         }
 
         /// <summary>
-        /// Gets or sets the value that indicates whether character shortcuts as ('K', 'C', 'L', 'M') can be used fo quick change of the NumericBox value.
+        /// Gets or sets the value that indicates whether characters 'D', 'H', 'K', 'C', 'L', 'M' can be used for quick multiplying the <see cref="NumericBox.Value"/> by 10, 100, 1000, 10000, 100000 or 1000000.
         /// </summary>
         public bool AllowShortcuts
         {
@@ -1493,7 +1493,7 @@ namespace ag.WPF.NumericBox
     }
 
     /// <summary>
-    /// Represents class for multiplying the <see cref="NumericBox.Value"/> when specified key is pressed
+    /// Represents object for setting ke/multiplier pair. When the specified key is pressed, the <see cref="NumericBox.Value"/> is multiplied by corresponding multiplier.
     /// </summary>
     public class NumericBoxShortcut
     {
