@@ -46,7 +46,18 @@ namespace ag.WPF.NumericBox
         private bool _backAtEnd;
         private bool _deleteAtEnd;
         private bool _isLoaded;
+        private SpecialCases _specialCases;
 
+        #region Private collections
+        private List<NumericBoxShortcut> _shortcuts { get; } = new List<NumericBoxShortcut>() {
+            new() { Key = Key.D, Multiplier = 10 } ,
+            new() { Key = Key.H, Multiplier = 100 } ,
+            new() { Key = Key.K, Multiplier = 1000 } ,
+            new() { Key = Key.L, Multiplier = 10000 } ,
+            new() { Key = Key.C, Multiplier = 100000 } ,
+            new() { Key = Key.M, Multiplier = 1000000 }
+        };
+        #endregion
 
         #region Dependency properties
         /// <summary>
@@ -99,6 +110,12 @@ namespace ag.WPF.NumericBox
         /// </summary>
         public static readonly DependencyProperty AllowShortcutsProperty = DependencyProperty.Register(nameof(AllowShortcuts), typeof(bool), typeof(NumericBox),
                 new FrameworkPropertyMetadata(false, OnAllowShortcutsChanged));
+        /// <summary>
+        /// The identifier of the <see cref="ShortcutsSource"/> dependency property.
+        /// </summary>
+        public static readonly DependencyProperty ShortcutsSourceProperty = DependencyProperty.Register(nameof(ShortcutsSource), typeof(IEnumerable<NumericBoxShortcut>), typeof(NumericBox),
+                new FrameworkPropertyMetadata(null));
+
         #endregion
 
         #region Public properties
@@ -134,6 +151,7 @@ namespace ag.WPF.NumericBox
                 SetValue(TextProperty, !string.IsNullOrEmpty(value) ? value : null);
             }
         }
+
         /// <summary>
         /// Gets or sets the property specified whether fractional part of decimal value will be truncated (True) accordingly to <see cref="DecimalPlaces"/> or rounded (False).
         /// </summary>
@@ -142,6 +160,7 @@ namespace ag.WPF.NumericBox
             get => (bool)GetValue(TruncateFractionalPartProperty);
             set => SetValue(TruncateFractionalPartProperty, value);
         }
+
         /// <summary>
         /// Gets or sets the text alignment of NumericBox.
         /// </summary>
@@ -186,6 +205,7 @@ namespace ag.WPF.NumericBox
             get => (SolidColorBrush)GetValue(NegativeForegroundProperty);
             set => SetValue(NegativeForegroundProperty, value);
         }
+
         /// <summary>
         /// Gets or sets the value that indicates whether NumericBox is in read-only state.
         /// </summary>
@@ -194,6 +214,7 @@ namespace ag.WPF.NumericBox
             get => (bool)GetValue(IsReadOnlyProperty);
             set => SetValue(IsReadOnlyProperty, value);
         }
+
         /// <summary>
         /// Gets or sets the value that indicates whether trailing zeroes in decimal part of NumericBox should be shown.
         /// </summary>
@@ -202,6 +223,7 @@ namespace ag.WPF.NumericBox
             get => (bool)GetValue(ShowTrailingZerosProperty);
             set => SetValue(ShowTrailingZerosProperty, value);
         }
+
         /// <summary>
         /// Gets or sets the value that indicates whether character shortcuts as ('K', 'C', 'L', 'M') can be used fo quick change of the NumericBox value.
         /// </summary>
@@ -209,6 +231,15 @@ namespace ag.WPF.NumericBox
         {
             get => (bool)GetValue(AllowShortcutsProperty);
             set => SetValue(AllowShortcutsProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the source of NumericBox shortcuts
+        /// </summary>
+        public IEnumerable<NumericBoxShortcut> ShortcutsSource
+        {
+            get => (IEnumerable<NumericBoxShortcut>)GetValue(ShortcutsSourceProperty);
+            set => SetValue(ShortcutsSourceProperty, value);
         }
         #endregion
 
@@ -992,7 +1023,7 @@ namespace ag.WPF.NumericBox
                         {
                             e.Handled = true;
                         }
-                        else if(decimalIndex >= 0 && _textBox.SelectionLength != text.Length)
+                        else if (decimalIndex >= 0 && _textBox.SelectionLength != text.Length)
                         {
                             _textBox.CaretIndex = decimalIndex + 1;
                             e.Handled = true;
@@ -1003,35 +1034,17 @@ namespace ag.WPF.NumericBox
                         e.Handled = true;
                     }
                     break;
-                case Key.D or Key.H or Key.K or Key.C or Key.L or Key.M:
+                default:
                     if (AllowShortcuts && Value != null)
                     {
-                        switch (e.Key)
+                        var shortcuts = getShortcuts();
+                        var shortcut = shortcuts.FirstOrDefault(sc => sc.Key == e.Key);
+                        if (shortcut != null)
                         {
-                            case Key.D:
-                                Value *= 10;
-                                break;
-                            case Key.H:
-                                Value *= 100;
-                                break;
-                            case Key.K:
-                                Value *= 1000;
-                                break;
-                            case Key.C:
-                                Value *= 10000;
-                                break;
-                            case Key.L:
-                                Value *= 100000;
-                                break;
-                            case Key.M:
-                                Value *= 1000000;
-                                break;
+                            Value *= shortcut.Multiplier;
+                            _textBox.CaretIndex = carIndex;
                         }
                     }
-                    _textBox.CaretIndex = carIndex;
-                    e.Handled = true;
-                    break;
-                default:
                     e.Handled = true;
                     break;
             }
@@ -1102,7 +1115,36 @@ namespace ag.WPF.NumericBox
         }
         #endregion
 
+        #region Private enums
+        private enum SpecialCases
+        {
+            None,
+            Negative,
+            NegativeZero,
+            NegativeDot,
+            Dot,
+            EndDot,
+            StartDot,
+            NegativeDotNumber
+        }
+        #endregion
+
         #region Private procedures
+        private IEnumerable<NumericBoxShortcut> getShortcuts()
+        {
+            var b = BindingOperations.GetBinding(this, ShortcutsSourceProperty);
+            if (b == null)
+            {
+                return _shortcuts;
+            }
+            else
+            {
+                var hashSet = new HashSet<NumericBoxShortcut>(ShortcutsSource);
+                foreach (var sc in _shortcuts)
+                    hashSet.Add(sc);
+                return hashSet;
+            }
+        }
 
         private string getRealFractionString(decimal value, CultureInfo culture)
         {
@@ -1141,19 +1183,6 @@ namespace ag.WPF.NumericBox
             }
             return null;
         }
-
-        private enum SpecialCases
-        {
-            None,
-            Negative,
-            NegativeZero,
-            NegativeDot,
-            Dot,
-            EndDot,
-            StartDot,
-            NegativeDotNumber
-        }
-        private SpecialCases _specialCases;
 
         private string convertToString(decimal? decimalValue)
         {
@@ -1392,6 +1421,7 @@ namespace ag.WPF.NumericBox
 
             return result;
         }
+
         private void cutCommandBinding(object sender, ExecutedRoutedEventArgs e)
         {
             if (IsReadOnly)
@@ -1460,6 +1490,23 @@ namespace ag.WPF.NumericBox
             }
         }
         #endregion
+    }
+
+    /// <summary>
+    /// Represents class for multiplying the <see cref="NumericBox.Value"/> when specified key is pressed
+    /// </summary>
+    public class NumericBoxShortcut
+    {
+        /// <summary>
+        /// Gets or sets the shortcut's multiplier
+        /// </summary>
+        public int Multiplier { get; set; }
+        /// <summary>
+        /// Gets or sets the shortcut's key
+        /// </summary>
+        public Key Key { get; set; }
+        /// <inheritdoc/>
+        public override int GetHashCode() => Key.GetHashCode();
     }
 
     internal static class Extensions
