@@ -2,15 +2,11 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
-using System.Windows.Ink;
 using System.Windows.Input;
-using System.Windows.Interop;
 using System.Windows.Media;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace ag.WPF.NumericBox
 {
