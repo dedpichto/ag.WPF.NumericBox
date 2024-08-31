@@ -63,7 +63,7 @@ Setting the **ShortcutsSource** property will add new shortcusts or override exi
 
 ### NumericBoxShortcut
 
-Represents object for setting ke/multiplier pair. When the specified key is pressed, the value of NumericBox is multiplied by corresponding multiplier.
+Represents the object for setting key/multiplier pair. When the specified key is pressed, the value of NumericBox is multiplied by corresponding multiplier.
 
 Property name | Value type | Description
 --- | --- | ---

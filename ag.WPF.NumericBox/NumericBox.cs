@@ -1493,7 +1493,7 @@ namespace ag.WPF.NumericBox
     }
 
     /// <summary>
-    /// Represents object for setting ke/multiplier pair. When the specified key is pressed, the <see cref="NumericBox.Value"/> is multiplied by corresponding multiplier.
+    /// Represents the object for setting key/multiplier pair. When the specified key is pressed, the <see cref="NumericBox.Value"/> is multiplied by corresponding multiplier.
     /// </summary>
     public class NumericBoxShortcut
     {
