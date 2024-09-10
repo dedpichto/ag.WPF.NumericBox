@@ -1273,7 +1273,7 @@ namespace ag.WPF.NumericBox
                         if (fracPart.Length > DecimalPlaces)
                             fracPart = fracPart.Substring(0, (int)DecimalPlaces);
                         intpPart = Convert.ToInt64(intpPart).ToString(formatInt);
-                        if (!ShowTrailingZeros && _userInput)
+                        if (!ShowTrailingZeros && !_userInput)
                         {
                             fracPart = fracPart.TrimEnd('0');
                         }
