@@ -3,7 +3,6 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="clr-namespace:ag.WPF.NumericBox">
 
-    <local:NumericBoxTextToValueConverter x:Key="NumericBoxTextToValueConverter" x:Shared="false"/>
     <local:NumericBoxForegroundConverter x:Key="NumericBoxForegroundConverter"/>
 
     <SolidColorBrush x:Key="UpDownBackgroundBrush" Color="{DynamicResource {x:Static SystemColors.WindowColorKey}}"/>
@@ -34,18 +33,6 @@
                              BorderThickness="{TemplateBinding BorderThickness}"
                              TextAlignment="{TemplateBinding TextAlignment}"
                              IsReadOnly="{TemplateBinding IsReadOnly}">
-                        <TextBox.Text>
-                            <MultiBinding Converter="{StaticResource NumericBoxTextToValueConverter}" Mode="TwoWay" UpdateSourceTrigger="PropertyChanged">
-                                <MultiBinding.Bindings>
-                                    <Binding Path="Value" RelativeSource="{RelativeSource Mode=TemplatedParent}"/>
-                                    <Binding Path="DecimalPlaces" RelativeSource="{RelativeSource Mode=TemplatedParent}"/>
-                                    <Binding Path="UseGroupSeparator" RelativeSource="{RelativeSource Mode=TemplatedParent}"/>
-                                    <Binding Path="ShowTrailingZeros" RelativeSource="{RelativeSource Mode=TemplatedParent}"/>
-                                    <Binding Path="IsFocused" ElementName="PART_Text" Mode="OneWay"/>
-                                    <Binding Path="TruncateFractionalPart" RelativeSource="{RelativeSource Mode=TemplatedParent}"/>
-                                </MultiBinding.Bindings>
-                            </MultiBinding>
-                        </TextBox.Text>
                         <TextBox.Foreground>
                             <MultiBinding Converter="{StaticResource NumericBoxForegroundConverter}">
                                 <MultiBinding.Bindings>
