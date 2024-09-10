@@ -127,12 +127,8 @@ namespace ag.WPF.NumericBox
             get => (string)GetValue(TextProperty);
             set
             {
-<<<<<<< HEAD
-                if (!string.IsNullOrEmpty(value) && !decimal.TryParse(value, out _) && !value.In(CultureInfo.CurrentCulture.NumberFormat.NegativeSign, CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator, $"{CultureInfo.CurrentCulture.NumberFormat.NegativeSign}{CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator}"))
-=======
                 var tempValue = "";
                 if (value != null)
->>>>>>> private
                 {
                     var groupsSeparator = CultureInfo.CurrentCulture.NumberFormat.NumberGroupSeparator;
                     var negativeSign = CultureInfo.CurrentCulture.NumberFormat.NegativeSign;
@@ -718,25 +714,13 @@ namespace ag.WPF.NumericBox
                     e.Handled = true;
                 return;
             }
-<<<<<<< HEAD
-            else if (e.Key.In(Key.Home, Key.End, Key.Left, Key.Right, Key.Tab, Key.Enter, Key.Return))
-=======
             else if (e.Key.In(Key.Left, Key.Right, Key.Home, Key.End, Key.Tab, Key.Enter, Key.Return))
->>>>>>> private
             {
                 return;
             }
 
             if (IsReadOnly)
             {
-<<<<<<< HEAD
-                e.Handled= true;
-                return;
-            }
-
-            switch (e.Key)
-            {
-=======
                 e.Handled = true;
                 return;
             }
@@ -795,7 +779,6 @@ namespace ag.WPF.NumericBox
                     }
                     e.Handled = true;
                     return;
->>>>>>> private
                 case Key.Delete:
                     _isDeletePressed = true;
                     if (carIndex == text.Length)
