@@ -20,7 +20,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\ag.WPF.NumericBox\Constants.cs" Link="Constants.cs" />
     <Compile Include="..\ag.WPF.NumericBox\NumericBox.cs" Link="NumericBox.cs" />
   </ItemGroup>
 
