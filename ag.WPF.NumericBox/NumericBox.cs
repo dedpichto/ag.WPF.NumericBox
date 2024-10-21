@@ -774,6 +774,13 @@ namespace ag.WPF.NumericBox
                     if (!isNegative && carIndex == 0)
                     {
                         _userInput = true;
+                        if (_textBox.SelectionLength == _textBox.Text.Length)
+                        {
+                            _textBox.Text = $"-";
+                            _textBox.CaretIndex = 1;
+                            e.Handled = true;
+                            return;
+                        }
                         _textBox.Text = $"-{text}";
                         _textBox.CaretIndex = 1;
                     }
@@ -844,6 +851,12 @@ namespace ag.WPF.NumericBox
                     {
                         if (decimalIndex >= 0 && carIndex == decimalIndex)
                         {
+                            if (_textBox.Text == decimalSeparator)
+                            {
+                                _textBox.Text = null;
+                                e.Handled = true;
+                                return;
+                            }
                             _textBox.CaretIndex++;
                             e.Handled = true;
                             return;
@@ -938,6 +951,12 @@ namespace ag.WPF.NumericBox
                         {
                             if (_textBox.SelectionLength == 0)
                             {
+                                if (_textBox.Text == decimalSeparator)
+                                {
+                                    _textBox.Text = null;
+                                    e.Handled = true;
+                                    return;
+                                }
                                 _textBox.CaretIndex = carIndex - 1;
                             }
                             else
@@ -1125,7 +1144,9 @@ namespace ag.WPF.NumericBox
             Dot,
             EndDot,
             StartDot,
-            NegativeDotNumber
+            NegativeDotNumber,
+            NegativeZeroDot,
+            NegativeZeroDotNumber
         }
         #endregion
 
@@ -1222,6 +1243,10 @@ namespace ag.WPF.NumericBox
                 var formatFraction = new string('0', (int)DecimalPlaces);
 
                 var (intpPart, fracPart) = getDecimalParts(decimalValue.Value, culture);
+                if (_specialCases == SpecialCases.NegativeZeroDot && _userInput)
+                {
+                    return $"{negativeSign}0{decimalSeparator}";
+                }
                 if (_specialCases == SpecialCases.NegativeDotNumber && _userInput)
                 {
                     if (fracPart.Length > DecimalPlaces)
@@ -1232,6 +1257,17 @@ namespace ag.WPF.NumericBox
                             fracPart = Convert.ToDecimal($"0{decimalSeparator}{fracPart}").ToString($"0{decimalSeparator}{formatFraction}").Substring(2);
                     }
                     return $"{negativeSign}{decimalSeparator}{fracPart}";
+                }
+                if (_specialCases == SpecialCases.NegativeZeroDotNumber && _userInput)
+                {
+                    if (fracPart.Length > DecimalPlaces)
+                    {
+                        if (TruncateFractionalPart)
+                            fracPart = fracPart.Substring(0, (int)DecimalPlaces);
+                        else
+                            fracPart = Convert.ToDecimal($"0{decimalSeparator}{fracPart}").ToString($"0{decimalSeparator}{formatFraction}").Substring(2);
+                    }
+                    return $"{negativeSign}0{decimalSeparator}{fracPart}";
                 }
                 if (_specialCases == SpecialCases.EndDot)
                 {
@@ -1272,7 +1308,8 @@ namespace ag.WPF.NumericBox
                     {
                         if (fracPart.Length > DecimalPlaces)
                             fracPart = fracPart.Substring(0, (int)DecimalPlaces);
-                        intpPart = Convert.ToInt64(intpPart).ToString(formatInt);
+                        if (intpPart != "-0")
+                            intpPart = Convert.ToInt64(intpPart).ToString(formatInt);
                         if (!ShowTrailingZeros && !_userInput)
                         {
                             fracPart = fracPart.TrimEnd('0');
@@ -1281,7 +1318,10 @@ namespace ag.WPF.NumericBox
                     }
                     else
                     {
-                        result = Convert.ToInt64(intpPart).ToString(formatInt);
+                        if (intpPart != "-0")
+                            result = Convert.ToInt64(intpPart).ToString(formatInt);
+                        else
+                            result = "-0";
                     }
                 }
                 else
@@ -1289,7 +1329,13 @@ namespace ag.WPF.NumericBox
                     if (DecimalPlaces > 0)
                     {
                         var format = $"{formatInt}{decimalSeparator}{formatFraction}";
-                        result = decimalValue.Value.ToString(format);
+                        if (intpPart != "-0")
+                            result = decimalValue.Value.ToString(format);
+                        else
+                        {
+                            fracPart = Convert.ToInt64(fracPart).ToString(formatFraction);
+                            result = $"{intpPart}{decimalSeparator}{fracPart}";
+                        }
                         if (!ShowTrailingZeros)
                         {
                             if (!_userInput)
@@ -1307,7 +1353,10 @@ namespace ag.WPF.NumericBox
                     }
                     else
                     {
-                        result = Convert.ToInt64(intpPart).ToString(formatInt);
+                        if (intpPart != "-0")
+                            result = Convert.ToInt64(intpPart).ToString(formatInt);
+                        else
+                            result = "-0";
                     }
                 }
                 if (!_userInput)
@@ -1368,6 +1417,10 @@ namespace ag.WPF.NumericBox
             {
                 _specialCases = SpecialCases.EndDot;
                 result = getDecimalFromString(stringValue.Substring(0, stringValue.Length - 1));
+                if (stringValue.StartsWith($"{negativeSign}0{decimalSeparator}"))
+                {
+                    _specialCases = SpecialCases.NegativeZeroDot;
+                }
             }
             else if (stringValue.StartsWith(decimalSeparator))
             {
@@ -1378,6 +1431,7 @@ namespace ag.WPF.NumericBox
             {
                 if (stringValue == $"{negativeSign}0{decimalSeparator}")
                 {
+                    _specialCases = SpecialCases.NegativeDotNumber;
                     result = 0;
                 }
                 else
@@ -1385,10 +1439,15 @@ namespace ag.WPF.NumericBox
                     var arr = stringValue.Split(decimalSeparator[0]);
                     if (arr.Length == 2 && arr[1].All(c => c == '0'))
                     {
+                        _specialCases = SpecialCases.NegativeDotNumber;
                         result = 0;
                     }
                     else
                     {
+                        if (stringValue.Length > $"{negativeSign}0{decimalSeparator}".Length)
+                            _specialCases = SpecialCases.NegativeZeroDotNumber;
+                        else
+                            _specialCases = SpecialCases.NegativeDotNumber;
                         result = getDecimalFromString(stringValue);
                     }
                 }
