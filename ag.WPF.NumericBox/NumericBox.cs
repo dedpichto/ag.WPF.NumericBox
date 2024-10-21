@@ -1329,13 +1329,7 @@ namespace ag.WPF.NumericBox
                     if (DecimalPlaces > 0)
                     {
                         var format = $"{formatInt}{decimalSeparator}{formatFraction}";
-                        if (intpPart != "-0")
-                            result = decimalValue.Value.ToString(format);
-                        else
-                        {
-                            fracPart = Convert.ToInt64(fracPart).ToString(formatFraction);
-                            result = $"{intpPart}{decimalSeparator}{fracPart}";
-                        }
+                        result = decimalValue.Value.ToString(format);
                         if (!ShowTrailingZeros)
                         {
                             if (!_userInput)
