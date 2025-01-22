@@ -740,8 +740,11 @@ namespace ag.WPF.NumericBox
 
             if (isNegative && carIndex == 0 && !(_textBox.SelectionLength == _textBox.Text.Length))
             {
-                e.Handled = true;
-                return;
+                if (!e.Key.In(Key.Delete, Key.Back))
+                {
+                    e.Handled = true;
+                    return;
+                }
             }
             switch (e.Key)
             {
