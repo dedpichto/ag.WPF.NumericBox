@@ -9,11 +9,11 @@
     <Description>Represents custom control for input and formatted output of decimal values</Description>
     <Company>Andrey Gruber</Company>
     <Authors>Andrey Gruber</Authors>
-    <Copyright>© Andrey Gruber 2023-2024</Copyright>
+    <Copyright>© Andrey Gruber 2023-2025</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageTags>WPF NumericBox .NET Framework Custom</PackageTags>
     <PackageId />
-    <Version>2.0.3</Version>
+    <Version>2.0.5</Version>
     <RepositoryUrl>https://github.com/dedpichto/ag.WPF.NumericBox</RepositoryUrl>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <PackageReleaseNotes>Note for developers: if you have used to use custom style for NumricBox control with versions prior to 2.0.1, please replace the old resource dictionary by new one from https://github.com/dedpichto/ag.WPF.NumericBox/tree/master/ag.WPF.NumericBox/Themes</PackageReleaseNotes>

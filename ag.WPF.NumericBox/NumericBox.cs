@@ -738,6 +738,11 @@ namespace ag.WPF.NumericBox
             _backAtEnd = false;
             _deleteAtEnd = false;
 
+            if (isNegative && carIndex == 0 && !(_textBox.SelectionLength == _textBox.Text.Length))
+            {
+                e.Handled = true;
+                return;
+            }
             switch (e.Key)
             {
                 case Key.D0 or Key.NumPad0:
@@ -771,7 +776,7 @@ namespace ag.WPF.NumericBox
                     _digit = "9";
                     break;
                 case Key.OemMinus or Key.Subtract:
-                    if (!isNegative && carIndex == 0)
+                    if ((!isNegative && carIndex == 0) || (_textBox.SelectionLength == _textBox.Text.Length))
                     {
                         _userInput = true;
                         if (_textBox.SelectionLength == _textBox.Text.Length)
