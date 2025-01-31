@@ -45,6 +45,7 @@ TruncateFractionalPart | bool | Gets or sets the property specified whether frac
 Text | string | Gets or sets the string representation of Value property | Empty string
 AllowShortcuts | bool | Gets or sets the value that indicates whether characters 'D', 'H', 'K', 'C', 'L', 'M' can be used for quick multiplying the NumericBox value by 10, 100, 1000, 10000, 100000 or 1000000. | False
 ShortcutsSource | IEnumerable\<NumericBoxShortcut\> | Gets or sets the source of NumericBox shortcuts | null
+DisableNegative | bool | Gets or sets the value that indicates whet negative input is enable | False
 
 ## Remarks
 

@@ -115,6 +115,11 @@ namespace ag.WPF.NumericBox
         /// </summary>
         public static readonly DependencyProperty ShortcutsSourceProperty = DependencyProperty.Register(nameof(ShortcutsSource), typeof(IEnumerable<NumericBoxShortcut>), typeof(NumericBox),
                 new FrameworkPropertyMetadata(null));
+        /// <summary>
+        /// The identifier of the <see cref="DisableNegative"/> dependency property.
+        /// </summary>
+        public static readonly DependencyProperty DisableNegativeProperty = DependencyProperty.Register(nameof(DisableNegative), typeof(bool), typeof(NumericBox),
+                new FrameworkPropertyMetadata(false, OnDisableNegativeChanged));
 
         #endregion
 
@@ -225,7 +230,7 @@ namespace ag.WPF.NumericBox
         }
 
         /// <summary>
-        /// Gets or sets the value that indicates whether characters 'D', 'H', 'K', 'C', 'L', 'M' can be used for quick multiplying the <see cref="NumericBox.Value"/> by 10, 100, 1000, 10000, 100000 or 1000000.
+        /// herGets or sets the value that indicates whet characters 'D', 'H', 'K', 'C', 'L', 'M' can be used for quick multiplying the <see cref="NumericBox.Value"/> by 10, 100, 1000, 10000, 100000 or 1000000.
         /// </summary>
         public bool AllowShortcuts
         {
@@ -240,6 +245,14 @@ namespace ag.WPF.NumericBox
         {
             get => (IEnumerable<NumericBoxShortcut>)GetValue(ShortcutsSourceProperty);
             set => SetValue(ShortcutsSourceProperty, value);
+        }
+        /// <summary>
+        /// Gets or sets the value that indicates whet negative input is enable
+        /// </summary>
+        public bool DisableNegative
+        {
+            get => (bool)GetValue(DisableNegativeProperty);
+            set => SetValue(DisableNegativeProperty, value);
         }
         #endregion
 
@@ -426,6 +439,25 @@ namespace ag.WPF.NumericBox
         }
 
         /// <summary>
+        /// Invoked just before the <see cref="DisableNegativeChanged"/> event is raised on NumericBox
+        /// </summary>
+        /// <param name="oldValue"></param>
+        /// <param name="newValue"></param>
+        private void OnDisableNegativeChanged(bool oldValue, bool newValue)
+        {
+            var e = new RoutedPropertyChangedEventArgs<bool>(oldValue, newValue)
+            {
+                RoutedEvent = DisableNegativeEvent
+            };
+            RaiseEvent(e);
+        }
+        private static void OnDisableNegativeChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
+        {
+            if (sender is not NumericBox box) return;
+            box.OnDisableNegativeChanged((bool)e.OldValue, (bool)e.NewValue);
+        }
+
+        /// <summary>
         /// Invoked just before the <see cref="TextChanged"/> event is raised on NumericBox
         /// </summary>
         /// <param name="oldValue">Old value</param>
@@ -443,9 +475,14 @@ namespace ag.WPF.NumericBox
             if (sender is not NumericBox box) return;
             if (box._isLoaded)
             {
+                var stringValue = (string)e.NewValue;
+                if (box.DisableNegative && !string.IsNullOrEmpty(stringValue) && stringValue.StartsWith(CultureInfo.CurrentCulture.NumberFormat.NegativeSign))
+                {
+                    stringValue = stringValue.Substring(1);
+                }
                 if (box._textBox != null)
-                    box._textBox.Text = (string)e.NewValue;
-                box.Value = box.convertToDecimal((string)e.NewValue);
+                    box._textBox.Text = stringValue;
+                box.Value = box.convertToDecimal(stringValue);
             }
             box.OnTextChanged((string)e.OldValue, (string)e.NewValue);
         }
@@ -590,6 +627,20 @@ namespace ag.WPF.NumericBox
             RoutingStrategy.Bubble, typeof(RoutedPropertyChangedEventHandler<bool>), typeof(NumericBox));
 
         /// <summary>
+        /// Occurs when the <see cref="DisableNegative"/> property has been changed in some way.
+        /// </summary>
+        public event RoutedPropertyChangedEventHandler<bool> DisableNegativeChanged
+        {
+            add => AddHandler(DisableNegativeEvent, value);
+            remove => RemoveHandler(DisableNegativeEvent, value);
+        }
+        /// <summary>
+        /// Identifies the <see cref="DisableNegativeChanged"/> routed event.
+        /// </summary>
+        public static readonly RoutedEvent DisableNegativeEvent = EventManager.RegisterRoutedEvent("DisableNegativeChanged",
+            RoutingStrategy.Bubble, typeof(RoutedPropertyChangedEventHandler<bool>), typeof(NumericBox));
+
+        /// <summary>
         /// Occurs when the <see cref="TruncateFractionalPart"/> property has been changed in some way.
         /// </summary>
         public event RoutedPropertyChangedEventHandler<bool> TruncateFractionalPartChanged
@@ -723,6 +774,15 @@ namespace ag.WPF.NumericBox
             {
                 e.Handled = true;
                 return;
+            }
+
+            if (DisableNegative)
+            {
+                if (e.Key.In(Key.OemMinus, Key.Subtract))
+                {
+                    e.Handled = true;
+                    return;
+                }
             }
 
             var decimalSeparator = CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator;
@@ -1245,6 +1305,12 @@ namespace ag.WPF.NumericBox
                         return null;
                     }
                 }
+
+                if (DisableNegative && decimalValue < 0)
+                {
+                    decimalValue = Math.Abs(decimalValue.Value);
+                }
+
                 var isFocused = _textBox != null && _textBox.IsFocused;
 
                 var formatInt = UseGroupSeparator ? "#" + groupSeparator + "##0" : "##0";
@@ -1521,12 +1587,17 @@ namespace ag.WPF.NumericBox
             if (Clipboard.ContainsText())
             {
                 var clipboardText = Clipboard.GetText();
+
                 if (!decimal.TryParse(clipboardText, out _))
                 {
                     e.Handled = true;
                 }
                 else
                 {
+                    if (DisableNegative && !string.IsNullOrEmpty(clipboardText) && clipboardText.StartsWith(CultureInfo.CurrentCulture.NumberFormat.NegativeSign))
+                    {
+                        clipboardText = clipboardText.Substring(1);
+                    }
                     var carIndex = _textBox.CaretIndex;
                     var selectionStart = _textBox.SelectionStart;
                     var groupSeparator = CultureInfo.CurrentCulture.NumberFormat.NumberGroupSeparator;
