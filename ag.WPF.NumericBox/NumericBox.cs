@@ -149,9 +149,13 @@ namespace ag.WPF.NumericBox
                 {
                     if (dv > (double)decimal.MaxValue || dv < (double)decimal.MinValue)
                     {
-                        throw new OverflowException("Value is too large or too small for decimal.");
+                        Value = null;
+                        SetValue(TextProperty, null);
+                        return;
                     }
-                    throw new FormatException("Input string was not in a correct format.");
+                    Value = null;
+                    SetValue(TextProperty, null);
+                    return;
                 }
                 SetValue(TextProperty, !string.IsNullOrEmpty(value) ? value : null);
             }
@@ -699,7 +703,9 @@ namespace ag.WPF.NumericBox
                 _textBox.LostFocus -= textBox_LostFocus;
                 _textBox.GotFocus -= textBox_GotFocus;
                 _textBox.PreviewKeyDown -= textBox_PreviewKeyDown;
-                //_textBox.PreviewTextInput -= textBox_PreviewTextInput;
+                _textBox.PreviewDrop -= _textBox_PreviewDrop;
+                _textBox.PreviewDragEnter -= _textBox_PreviewDragEnter;
+                _textBox.PreviewDragOver -= _textBox_PreviewDragOver;
                 _textBox.TextChanged -= textBox_TextChanged;
                 _textBox.PreviewMouseLeftButtonDown -= textBox_PreviewMouseLeftButtonDown;
                 _textBox.CommandBindings.Clear();
@@ -711,7 +717,9 @@ namespace ag.WPF.NumericBox
                 _textBox.LostFocus += textBox_LostFocus;
                 _textBox.GotFocus += textBox_GotFocus;
                 _textBox.PreviewKeyDown += textBox_PreviewKeyDown;
-                //_textBox.PreviewTextInput += textBox_PreviewTextInput;
+                _textBox.PreviewDrop += _textBox_PreviewDrop;
+                _textBox.PreviewDragEnter += _textBox_PreviewDragEnter;
+                _textBox.PreviewDragOver += _textBox_PreviewDragOver;
                 _textBox.TextChanged += textBox_TextChanged;
                 _textBox.PreviewMouseLeftButtonDown += textBox_PreviewMouseLeftButtonDown;
                 _textBox.CommandBindings.Add(new CommandBinding(ApplicationCommands.Paste, pasteCommandBinding));
@@ -720,9 +728,26 @@ namespace ag.WPF.NumericBox
                 _textBox.Text = convertToString(v);
             }
         }
+
         #endregion
 
         #region Event handlers
+        private void _textBox_PreviewDragOver(object sender, DragEventArgs e)
+        {
+            e.Effects = DragDropEffects.None;
+            e.Handled = true;
+        }
+        private void _textBox_PreviewDragEnter(object sender, DragEventArgs e)
+        {
+            e.Effects = DragDropEffects.None;
+            e.Handled = true;
+        }
+        private void _textBox_PreviewDrop(object sender, DragEventArgs e)
+        {
+            e.Effects = DragDropEffects.None;
+            e.Handled = true;
+        }
+
         private void textBox_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (e.ClickCount == 2)
