@@ -1093,7 +1093,10 @@ namespace ag.WPF.NumericBox
                         var after = _textBox.Text.Length >= before.Length ? _textBox.Text.Substring(0, before.Length) : _textBox.Text;
                         var count1 = before.Count(c => c == groupSeparator[0]);
                         var count2 = after.Count(c => c == groupSeparator[0]);
-                        _textBox.CaretIndex = carIndex + (count2 - count1) - (isGroup ? 2 : 1);
+                        var diff = count2 - count1;
+                        if (diff < 0)
+                            diff = 0;
+                        _textBox.CaretIndex = carIndex + diff - (isGroup ? 2 : 1);
                         e.Handled = true;
                         return;
 
@@ -1106,7 +1109,10 @@ namespace ag.WPF.NumericBox
                         var after = _textBox.Text.Length >= before.Length ? _textBox.Text.Substring(0, before.Length) : _textBox.Text;
                         var count1 = before.Count(c => c == groupSeparator[0]);
                         var count2 = after.Count(c => c == groupSeparator[0]);
-                        _textBox.CaretIndex = carIndex + (count2 - count1);
+                        var diff = count2 - count1;
+                        if (diff < 0)
+                            diff = 0;
+                        _textBox.CaretIndex = carIndex + diff;
                         e.Handled = true;
                         return;
                     }
@@ -1179,7 +1185,7 @@ namespace ag.WPF.NumericBox
                     if (carIndex > decimalIndex)
                     {
                         var textBefore = _textBox.Text.Substring(decimalIndex + 1, carIndex - (decimalIndex + 1));
-                        var textAfter = _digit + _textBox.Text.Substring(carIndex);
+                        var textAfter = $"{_digit}{_textBox.Text.Substring(carIndex)}";
                         var textTotal = $"{textBefore}{textAfter}";
                         if (textTotal.Length > DecimalPlaces)
                         {
@@ -1198,7 +1204,11 @@ namespace ag.WPF.NumericBox
                 }
                 else
                 {
+                    var textBefore = _textBox.Text;
                     _textBox.Text = _textBox.Text.Insert(carIndex, _digit);
+                    var textAfter = _textBox.Text;
+                    if (isCaretAtEnd && textAfter.Length > textBefore.Length)
+                        isCaretAtEnd = false;
                 }
 
             }
@@ -1208,7 +1218,7 @@ namespace ag.WPF.NumericBox
             }
             else if (carIndex < _textBox.Text.Length)
             {
-                var afterDigit = _textBox.Text.Substring(0, selectionStart + _digit.Length); ;
+                var afterDigit = _textBox.Text.Substring(0, selectionStart + _digit.Length);
                 var count1Digit = beforeDigit.Count(c => c == groupSeparator[0]);
                 var count2Digit = afterDigit.Count(c => c == groupSeparator[0]);
                 _textBox.CaretIndex = carIndex + (count2Digit - count1Digit) + _digit.Length;
