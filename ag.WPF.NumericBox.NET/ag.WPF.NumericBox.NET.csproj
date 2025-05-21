@@ -13,10 +13,10 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageTags>WPF NumericBox .NET Framework Custom</PackageTags>
     <PackageId />
-    <Version>2.0.9</Version>
+    <Version>2.1.0</Version>
     <RepositoryUrl>https://github.com/dedpichto/ag.WPF.NumericBox</RepositoryUrl>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
-    <PackageReleaseNotes>Fixex control's crash on BackSpace key. Note for developers: if you have used to use custom style for NumricBox control with versions prior to 2.0.1, please replace the old resource dictionary by new one from https://github.com/dedpichto/ag.WPF.NumericBox/tree/master/ag.WPF.NumericBox/Themes</PackageReleaseNotes>
+    <PackageReleaseNotes>Fixex control's focusable state. Note for developers: if you have used to use custom style for NumricBox control with versions prior to 2.0.1, please replace the old resource dictionary by new one from https://github.com/dedpichto/ag.WPF.NumericBox/tree/master/ag.WPF.NumericBox/Themes</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>

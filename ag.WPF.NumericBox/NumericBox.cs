@@ -729,6 +729,15 @@ namespace ag.WPF.NumericBox
             }
         }
 
+        /// <summary>
+        /// Called when the control receives keyboard focus.
+        /// Ensures that the internal <see cref="TextBox"/> receives focus when the <see cref="NumericBox"/> is focused.
+        /// </summary>
+        /// <param name="e">The event data for the <see cref="RoutedEventArgs"/>.</param>
+        protected override void OnGotFocus(RoutedEventArgs e)
+        {
+            _textBox?.Focus();
+        }
         #endregion
 
         #region Event handlers

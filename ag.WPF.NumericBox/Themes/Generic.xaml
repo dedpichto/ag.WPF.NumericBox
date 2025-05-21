@@ -18,7 +18,7 @@
     <Style TargetType="{x:Type local:NumericBox}">
         <Setter Property="Height" Value="21"/>
         <Setter Property="MinHeight" Value="19"/>
-        <Setter Property="Focusable" Value="False"/>
+        <Setter Property="Focusable" Value="True"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Template">
             <Setter.Value>
