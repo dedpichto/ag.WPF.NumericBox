@@ -786,20 +786,21 @@ namespace ag.WPF.NumericBox
         private void textBox_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             _gotFocus = false;
-
-            if ((Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift)
+            if ((Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift
+                || (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control
+                || (Keyboard.Modifiers & ModifierKeys.Alt) == ModifierKeys.Alt
+                || (Keyboard.Modifiers & ModifierKeys.Windows) == ModifierKeys.Windows)
             {
-                if (!e.Key.In(Key.Home, Key.End, Key.Left, Key.Right))
-                    e.Handled = true;
+                if (isDigit(e.Key))
+                {
+                    if (!e.Key.In(Key.Home, Key.End, Key.Left, Key.Right))
+                    {
+                        e.Handled = true;
+                    }
+                }
                 return;
             }
-            else if ((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
-            {
-                if (!e.Key.In(Key.Home, Key.End, Key.A, Key.C, Key.V, Key.X, Key.Z, Key.Y))
-                    e.Handled = true;
-                return;
-            }
-            else if (e.Key.In(Key.Left, Key.Right, Key.Home, Key.End, Key.Tab, Key.Enter, Key.Return))
+            else if (e.Key.In(Key.Left, Key.Right, Key.Home, Key.End, Key.Tab, Key.Enter, Key.Return, Key.Escape))
             {
                 return;
             }
@@ -1263,6 +1264,24 @@ namespace ag.WPF.NumericBox
         #endregion
 
         #region Private procedures
+        private bool isDigit(Key key)
+        {
+            return key switch
+            {
+                Key.D0 or Key.NumPad0 => true,
+                Key.D1 or Key.NumPad1 => true,
+                Key.D2 or Key.NumPad2 => true,
+                Key.D3 or Key.NumPad3 => true,
+                Key.D4 or Key.NumPad4 => true,
+                Key.D5 or Key.NumPad5 => true,
+                Key.D6 or Key.NumPad6 => true,
+                Key.D7 or Key.NumPad7 => true,
+                Key.D8 or Key.NumPad8 => true,
+                Key.D9 or Key.NumPad9 => true,
+                _ => false,
+            };
+        }
+
         private IEnumerable<NumericBoxShortcut> getShortcuts()
         {
             var b = BindingOperations.GetBinding(this, ShortcutsSourceProperty);
